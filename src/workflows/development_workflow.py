@@ -3,6 +3,8 @@ LangFlow Factory - Development Workflow
 """
 from typing import Dict
 from ..agents.demand_analyst import DemandAnalyst
+from ..agents.architect import Architect
+from ..agents.detail_designer import DetailDesigner
 
 def analysis_node(state: Dict) -> Dict:
     """需求分析节点"""
@@ -11,23 +13,13 @@ def analysis_node(state: Dict) -> Dict:
 
 def architecture_node(state: Dict) -> Dict:
     """架构设计节点"""
-    # TODO: 实现 Architect Agent
-    state["current_step"] = "detail_design"
-    state["architecture_doc"] = {
-        "modules": [],
-        "tech_stack": "Python + LangChain",
-        "status": "placeholder"
-    }
-    return state
+    architect = Architect()
+    return architect.process(state)
 
 def detail_design_node(state: Dict) -> Dict:
     """详细设计节点"""
-    # TODO: 实现 DetailDesigner Agent
-    state["current_step"] = "dispatch"
-    state["detailed_tasks"] = [
-        {"id": "TASK-001", "title": "初始化项目", "status": "pending"}
-    ]
-    return state
+    designer = DetailDesigner()
+    return designer.process(state)
 
 def create_workflow_nodes():
     """创建工作流节点映射"""
@@ -52,9 +44,12 @@ def run_workflow(requirement_text: str, project_id: str = "default") -> Dict:
     # 执行节点链
     nodes = create_workflow_nodes()
     current = "analysis"
+    max_iterations = 10
+    iterations = 0
     
-    while current in nodes and current != "dispatch":
+    while current in nodes and current not in ["dispatch", "implementation", "testing", "acceptance", "release"] and iterations < max_iterations:
         state_dict = nodes[current](state_dict)
+        iterations += 1
         # 根据当前步骤确定下一步
         if state_dict.get("current_step"):
             current = state_dict["current_step"]
@@ -62,3 +57,17 @@ def run_workflow(requirement_text: str, project_id: str = "default") -> Dict:
             break
     
     return state_dict
+
+def get_next_node(current_step: str) -> str:
+    """获取下一步节点"""
+    flow = {
+        "analysis": "architecture",
+        "architecture": "detail_design",
+        "detail_design": "dispatch",
+        "dispatch": "implementation",
+        "implementation": "testing",
+        "testing": "acceptance",
+        "acceptance": "release",
+        "release": None
+    }
+    return flow.get(current_step)
