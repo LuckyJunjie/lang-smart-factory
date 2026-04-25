@@ -30,7 +30,7 @@ class GamePlayEvaluator:
         """评估游戏"""
         game_data = state.get("game_data", {})
         
-        prompt = GAME_EVAL_PROMPT.format(game_data=str(game_data))
+        # prompt = GAME_EVAL_PROMPT.format(game_data=str(game_data))  # placeholder
         result = self._generate_eval(game_data)
         
         state["game_eval_report"] = result
