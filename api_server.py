@@ -105,3 +105,21 @@ def list_workers():
             {"name": "test-worker", "status": "running"},
         ]
     })
+
+@app.route("/dashboard/langflow")
+def langflow_dashboard():
+    """LangFlow 监控仪表盘"""
+    return send_from_directory('templates', 'langflow_dashboard.html')
+
+@app.route("/api/v1/workflow/status")
+def get_global_workflow_status():
+    """获取全局工作流状态"""
+    return jsonify({
+        "project_id": "default",
+        "current_step": "running",
+        "active_projects": 1,
+        "total_tasks": 24,
+        "pass_rate": 92,
+        "active_tasks": 3,
+        "nodes": ["analysis", "architecture", "detail_design", "dispatch", "implementation", "testing", "acceptance", "release"]
+    })
