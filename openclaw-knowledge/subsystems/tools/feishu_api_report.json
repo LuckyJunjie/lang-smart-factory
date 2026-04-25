@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-02-28T10:36:36.631130",
+  "api_analysis": {
+    "total_calls": 165,
+    "by_api": {
+      "open-apis/bot/v3/info": 155,
+      "open-apis/auth/v3/tenant_access_token": 10
+    }
+  },
+  "error_analysis": {
+    "total_errors": 1983,
+    "by_code": {
+      "99991403": 1983
+    }
+  },
+  "issues": [
+    {
+      "severity": "HIGH",
+      "type": "EXCESSIVE_POLLING",
+      "description": "bot/v3/info 被调用 155 次",
+      "cause": "可能是健康检查或探针过于频繁调用",
+      "recommendation": "检查 probeFeishu 调用频率，添加缓存或减少调用次数"
+    },
+    {
+      "severity": "HIGH",
+      "type": "HIGH_ERROR_RATE",
+      "description": "共 1983 个错误，其中 99991403 错误 1983 次",
+      "cause": "可能是网络问题、证书问题或 API 调用频率限制",
+      "recommendation": "检查网络连接、证书配置，添加重试间隔"
+    },
+    {
+      "severity": "CRITICAL",
+      "type": "INFINITE_RETRY",
+      "description": "错误次数 1983 过高，可能存在无限重试",
+      "cause": "错误处理逻辑可能导致重复请求",
+      "recommendation": "实现指数退避重试，添加最大重试次数限制"
+    }
+  ]
+}

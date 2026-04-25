@@ -1,0 +1,2 @@
+-- 011: Entity display codes (P…-REQ…-TASK…-TC…) are computed by the API (core/api/server.py);
+-- no schema change. See docs/REQUIREMENTS.md §2.0.

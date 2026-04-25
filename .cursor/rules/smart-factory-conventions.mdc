@@ -1,0 +1,32 @@
+---
+description: Smart Factory project conventions, workflow, and Definition of Done
+alwaysApply: true
+---
+
+# Smart Factory Conventions
+
+## Before Starting
+
+Read `AGENTS.md` at repo root for context. Key docs:
+- DoD: `openclaw-knowledge/standards/DEFINITION_OF_DONE.md`
+- Context: `openclaw-knowledge/organization/SMART_FACTORY_CONTEXT.md`
+- Pipeline (archived): `archived/game/development-pipeline.md`
+
+## Definition of Done (abbreviated)
+
+1. **Code**: Complete, no compile/runtime errors
+2. **Tests**: Unit, integration, 0.1–0.5 verification pass
+3. **Git**: `feature/fix-xxx` branch → merge to master → push
+4. **Docs**: Update relevant docs, CHANGELOG, or dev status
+
+## Git Flow
+
+- Feature: `git checkout -b feature/xxx`
+- Fix: `git checkout -b fix/xxx`
+- After work: merge to master, push origin master
+
+## Task Context
+
+- Pending tasks: Smart Factory DB (`GET /api/requirements`); `archived/game/docs/pending_tasks.md` is reference only
+- Dev status: DB only; do not update archived game status markdown (see `archived/game/README.md`)
+- Report via 飞书群「福渊研发部」

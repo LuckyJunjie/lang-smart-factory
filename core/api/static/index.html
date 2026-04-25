@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Factory — Human View</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+  <header class="header">
+    <h1>Smart Factory</h1>
+    <p class="subtitle">Human-readable view of API data</p>
+    <nav class="nav">
+      <button type="button" data-section="dashboard" class="nav-btn active">Dashboard</button>
+      <button type="button" data-section="projects" class="nav-btn">项目管理</button>
+      <button type="button" data-section="requirements" class="nav-btn">需求管理</button>
+      <button type="button" data-section="teams" class="nav-btn">团队</button>
+      <button type="button" data-section="raw-api" class="nav-btn">Raw API</button>
+    </nav>
+  </header>
+
+  <main class="main">
+    <section id="section-dashboard" class="panel active">
+      <h2>Dashboard</h2>
+      <div class="dashboard-tabs" role="tablist" aria-label="Dashboard modules">
+        <button type="button" class="dashboard-tab-btn active" data-dashboard-tab="overview" role="tab">Overview</button>
+        <button type="button" class="dashboard-tab-btn" data-dashboard-tab="requirements" role="tab">需求管理</button>
+        <button type="button" class="dashboard-tab-btn" data-dashboard-tab="risk" role="tab">风险管理</button>
+        <button type="button" class="dashboard-tab-btn" data-dashboard-tab="meetings" role="tab">会议管理</button>
+      </div>
+      <div class="filters">
+        <button type="button" class="btn-refresh" data-refresh="dashboard">Refresh</button>
+      </div>
+      <div id="content-dashboard" class="content"><noscript><p class="empty">JavaScript is required to load data. Enable JS and refresh.</p></noscript></div>
+    </section>
+
+    <section id="section-projects" class="panel">
+      <h2>项目管理</h2>
+      <p class="hint">与 API 对齐：GET/POST <span class="mono">/api/projects</span>，GET/PATCH/DELETE <span class="mono">/api/projects/&lt;id&gt;</span>，GET <span class="mono">/api/projects/&lt;id&gt;/requirements</span>。</p>
+      <div class="filters">
+        <button type="button" class="btn-refresh" data-refresh="projects">Refresh</button>
+      </div>
+      <div id="content-projects" class="content"><p class="empty">打开本页签以加载。</p></div>
+    </section>
+
+    <section id="section-requirements" class="panel">
+      <h2>需求管理（含任务与测试用例）</h2>
+      <p class="hint">需求：<span class="mono">/api/requirements</span>；领取/分配/拆分：<span class="mono">take · assign · auto-split</span>；任务：<span class="mono">/api/tasks</span>；测试用例：<span class="mono">/api/requirements/&lt;rid&gt;/test-cases</span>。</p>
+      <div id="req-filters" class="filters"></div>
+      <div id="content-requirements" class="content"><p class="empty">打开本页签以加载。</p></div>
+    </section>
+
+    <section id="section-teams" class="panel">
+      <h2>团队</h2>
+      <p class="hint">展示与上报：在线团队、状态汇总、按团队查看分配与报告；阻塞 <span class="mono">POST/PATCH /api/discussion/blockage</span>；机器/状态上报 <span class="mono">POST .../machine-status · status-report · task-detail</span>。</p>
+      <div class="filters">
+        <button type="button" class="btn-refresh" data-refresh="teams">Refresh</button>
+      </div>
+      <div id="content-teams" class="content"><p class="empty">打开本页签以加载。</p></div>
+    </section>
+
+    <section id="section-raw-api" class="panel">
+      <h2>Raw API</h2>
+      <p class="hint">Valid GET APIs by category. Click “View raw” to fetch and see JSON response.</p>
+      <div id="content-raw-api" class="content raw-api-content">
+        <div id="raw-api-list"></div>
+        <div id="raw-api-output" class="raw-api-output"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+  <script src="/static/dashboard.js"></script>
+  <script src="/static/dashboard-mgmt.js"></script>
+</body>
+</html>

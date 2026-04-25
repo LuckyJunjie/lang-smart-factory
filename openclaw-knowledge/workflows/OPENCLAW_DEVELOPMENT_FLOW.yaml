@@ -1,0 +1,1056 @@
+# OpenClaw Development Flow — single canonical YAML (v3.1)
+# Collaboration narrative: OPENCLAW_COMMUNICATION_SYSTEM.md
+# Team standalone narrative: OPENCLAW_STANDALONE_WORKFLOW.md
+# Organization: ORGANIZATION.md
+
+version: "3.1"
+updated: "2026-04-08"
+source_doc: "OPENCLAW_COMMUNICATION_SYSTEM.md"
+standalone_doc: "OPENCLAW_STANDALONE_WORKFLOW.md"
+organization_doc: "ORGANIZATION.md"
+
+# ---------------------------------------------------------------------------
+# 0. ENTITY CODES (API-computed; docs/REQUIREMENTS.md §2.0)
+# ---------------------------------------------------------------------------
+entity_codes:
+  spec: "../../docs/REQUIREMENTS.md"
+  section: "§2.0"
+  use_in:
+    - "status-report tasks[]"
+    - "stream:results payloads"
+    - "report templates"
+    - "work/ directory naming"
+
+# ---------------------------------------------------------------------------
+# 0.1 ROLE SKILL POLICY (mandatory)
+# ---------------------------------------------------------------------------
+role_skill_policy:
+  vanguard001:
+    role: "项目管理 + 技术主控"
+    required_skills: ["assign_tasks_to_teams", "generate_daily_report", "meeting_participation"]
+    optional_spawn_specialists: ["coding-assistant", "tech-researcher", "stock-analyzer"]
+  hera:
+    role: "项目管理经理"
+    required_skills: ["handle_blockage", "hera_monitor", "meeting_participation"]
+    optional_spawn_specialists: ["demand-analyst", "risk-manager", "reporter"]
+  jarvis:
+    role: "Mac 开发主管"
+    required_skills: ["develop_requirement", "team_sync", "report_team_status", "report_machine_status", "meeting_participation"]
+    godot_skills_policy:
+      project_level: "godogen"
+      task_level: "godot-task"
+    optional_spawn_specialists: ["mac-developer", "bug-fixer", "render-engineer"]
+    named_spawn_agents:
+      - { id: "athena", type: "mac-developer", workspace: "organization/workspace/jarvis/athena/" }
+      - { id: "cerberus", type: "bug-fixer", workspace: "organization/workspace/jarvis/cerberus/" }
+      - { id: "apollo", type: "render-engineer", workspace: "organization/workspace/jarvis/apollo/" }
+      - { id: "hermes", type: "devops-support", workspace: "organization/workspace/jarvis/hermes/" }
+      - { id: "chiron", type: "scrum-coordinator", workspace: "organization/workspace/jarvis/chiron/" }
+  codeforge:
+    role: "Windows 开发主管"
+    required_skills: ["develop_requirement", "team_sync", "report_team_status", "report_machine_status", "meeting_participation"]
+    godot_skills_policy:
+      project_level: "godogen"
+      task_level: "godot-task"
+    optional_spawn_specialists: ["win-developer", "bug-fixer", "render-engineer"]
+    named_spawn_agents:
+      - { id: "pangu", type: "win-developer", workspace: "organization/workspace/codeforge/pangu/" }
+      - { id: "nuwa", type: "bug-fixer", workspace: "organization/workspace/codeforge/nuwa/" }
+      - { id: "luban", type: "render-engineer", workspace: "organization/workspace/codeforge/luban/" }
+      - { id: "yu", type: "devops-support", workspace: "organization/workspace/codeforge/yu/" }
+      - { id: "shennong", type: "scrum-coordinator", workspace: "organization/workspace/codeforge/shennong/" }
+  dinosaur:
+    role: "未来 NAS 开发/渲染主管"
+    required_skills: ["develop_requirement", "team_sync", "report_team_status", "report_machine_status", "meeting_participation"]
+    godot_skills_policy:
+      project_level: "godogen"
+      task_level: "godot-task"
+    optional_spawn_specialists: ["mac-developer", "bug-fixer", "render-engineer", "nas-manager"]
+    named_spawn_agents:
+      - { id: "trex", type: "mac-developer", workspace: "organization/workspace/dinosaur/trex/" }
+      - { id: "raptor", type: "bug-fixer", workspace: "organization/workspace/dinosaur/raptor/" }
+      - { id: "ptero", type: "render-engineer", workspace: "organization/workspace/dinosaur/ptero/" }
+      - { id: "bronto", type: "nas-manager", workspace: "organization/workspace/dinosaur/bronto/" }
+  tesla:
+    role: "游戏测试与开发主管（测试主责）"
+    required_skills:
+      - "test_requirement"
+      - "develop_requirement"
+      - "team_sync"
+      - "report_team_status"
+      - "report_machine_status"
+      - "meeting_participation"
+    godot_skills_policy:
+      project_level: "godogen"
+      task_level: "godot-task"
+    optional_spawn_specialists: ["game-tester", "ux-reviewer", "mac-developer", "bug-fixer"]
+    named_spawn_agents:
+      - { id: "model_s", type: "game-tester", workspace: "organization/workspace/tesla/model_s/" }
+      - { id: "model_3", type: "ux-reviewer", workspace: "organization/workspace/tesla/model_3/" }
+      - { id: "model_x", type: "bug-fixer", workspace: "organization/workspace/tesla/model_x/" }
+      - { id: "model_y", type: "mac-developer", workspace: "organization/workspace/tesla/model_y/" }
+      - { id: "cybertruck", type: "devops-support", workspace: "organization/workspace/tesla/cybertruck/" }
+  newton:
+    role: "游戏测试与开发主管（测试主责）"
+    required_skills:
+      - "test_requirement"
+      - "develop_requirement"
+      - "team_sync"
+      - "report_team_status"
+      - "report_machine_status"
+      - "meeting_participation"
+    godot_skills_policy:
+      project_level: "godogen"
+      task_level: "godot-task"
+    optional_spawn_specialists: ["game-tester", "ux-reviewer", "mac-developer", "bug-fixer"]
+    named_spawn_agents:
+      - { id: "einstein", type: "mac-developer", workspace: "organization/workspace/newton/einstein/" }
+      - { id: "curie", type: "game-tester", workspace: "organization/workspace/newton/curie/" }
+      - { id: "galileo", type: "render-engineer", workspace: "organization/workspace/newton/galileo/" }
+      - { id: "darwin", type: "ux-reviewer", workspace: "organization/workspace/newton/darwin/" }
+      - { id: "hawking", type: "ui-designer", workspace: "organization/workspace/newton/hawking/" }
+
+# ---------------------------------------------------------------------------
+# 0.2 ENVIRONMENT BOOTSTRAP (self-install by agents)
+# ---------------------------------------------------------------------------
+environment_bootstrap:
+  canonical_doc: "openclaw-knowledge/docs/TOOLCHAIN.md"
+  common:
+    required_commands:
+      - "python3"
+      - "git"
+    python_packages:
+      - "requests"
+    python_packages_when_running_repo_tests:
+      - "flask"
+      - "pytest"
+      - "pytest-cov"
+      - "pyyaml"
+    install_notes:
+      - "Full install/verify matrix: see canonical_doc (openclaw-knowledge/docs/TOOLCHAIN.md)"
+      - "If requests is missing: python3 -m pip install requests"
+      - "For API/pytest at repo root: python3 -m pip install flask pytest pytest-cov requests pyyaml"
+      - "Set SMART_FACTORY_API to the API base URL (e.g. http://192.168.3.75:5000/api)"
+      - "For Feishu reporting, set FEISHU_WEBHOOK_URL where required"
+      - "Optional MCP: pip install -r openclaw-knowledge/mcp/requirements.txt"
+  godot_development:
+    godot_baseline_version: "4.5.1-stable"
+    required_for_roles: ["jarvis", "codeforge", "dinosaur", "tesla", "newton"]
+    required_commands:
+      - "godot"
+      - "timeout"
+    recommended_commands:
+      - "xvfb-run"
+      - "ffmpeg"
+      - "gdlint"
+    verify_commands:
+      - "godot --version"
+      - "timeout 30 godot --headless --quit 2>&1"
+    install_examples:
+      macos:
+        - "Prefer official Godot 4.5.1-stable .dmg/.zip from GitHub releases; verify: godot --version"
+        - "brew install --cask godot  # then confirm version is 4.5.1; else use official binary"
+        - "brew install coreutils ffmpeg"
+      ubuntu_debian:
+        - "Install Godot 4.5.1 official Linux binary from GitHub releases; chmod +x and put on PATH (do not rely on apt godot3 for Godot 4.x)"
+        - "sudo apt-get update && sudo apt-get install -y xvfb ffmpeg python3-pip"
+      windows:
+        - "Prefer official Godot 4.5.1 win64 from GitHub releases; verify: godot --version"
+        - "winget install -e --id GodotEngine.GodotEngine  # verify version after install"
+        - "winget install -e --id Gyan.FFmpeg"
+    notes:
+      - "Baseline version: 4.5.1-stable — see canonical_doc"
+      - "Use headless mode for CI/agent automation: godot --headless"
+      - "Before scene/script validation, run import step when assets changed: timeout 60 godot --headless --import"
+      - "godot-task doc API bootstrap: bash openclaw-knowledge/skills/godot-task/tools/ensure_doc_api.sh"
+  spawn_mode:
+    policy: "named-workspace-spawn"
+    note: "Named sub-agents have persistent workspace profiles, but they are not resident processes. Team Main must launch them via sessions_spawn before any executor assignment."
+
+# ---------------------------------------------------------------------------
+# 0.3 REDIS TOPOLOGY (prefix smartfactory; see REDIS_COLLABORATION.md)
+# ---------------------------------------------------------------------------
+redis:
+  prefix: "smartfactory"
+  channels:
+    task_dispatch: "smartfactory:task:dispatch"
+    task_blocker: "smartfactory:task:blocker"
+    agent_heartbeat: "smartfactory:agent:heartbeat"
+  streams:
+    tasks: "smartfactory:stream:tasks"
+    results: "smartfactory:stream:results"
+    blockers: "smartfactory:stream:blockers"
+  consumer_groups:
+    dev_teams: "dev-teams"
+    test_teams: "test-teams"
+    hera: "hera-group"
+
+# ---------------------------------------------------------------------------
+# 1. OVERVIEW
+# ---------------------------------------------------------------------------
+overview:
+  description: |
+    OpenClaw supports two equivalent execution modes: (A) Vanguard-coordinated multi-device collaboration
+    with Redis + API, and (B) team standalone closure where Master Jay / Winnie Chen brief Team Manager
+    directly; one team spawns sub-agents and completes dev/test/review/push without inter-device Redis.
+    See standalone_doc for (B); source_doc for (A). Requirements may use readable codes when DB is used.
+  execution_layer: "Smart Factory CLI (python3 -m cli); mode (A): SMART_FACTORY_API + Redis smartfactory:* for inter-team dispatch; mode (B): same CLI/skills locally, Redis not mandatory for coordination"
+  cli_readme: "openclaw-knowledge/cli/README.md"
+
+# ---------------------------------------------------------------------------
+# 1.1 EXECUTION MODES (collaboration vs standalone)
+# ---------------------------------------------------------------------------
+execution_modes:
+  vanguard_coordinated:
+    narrative_doc: "OPENCLAW_COMMUNICATION_SYSTEM.md"
+    summary: "Multi-device; Vanguard/Hera; Redis Streams tasks/results + API DB"
+    mandatory_for_inter_team_dispatch: ["REDIS_URI (smartfactory:*)", "SMART_FACTORY_API for assigned-requirements sync"]
+    primary_workflows: ["vanguard_hourly", "dev_team_cycle", "tesla_cycle", "newton_cycle", "hera_cycle", "blockage_flow"]
+  team_standalone:
+    narrative_doc: "OPENCLAW_STANDALONE_WORKFLOW.md"
+    summary: "Leadership brief → Team Manager → project docs gap analysis → spawn sub-agents → test/review → push → report Master Jay"
+    inter_device_redis: "not required"
+    smart_factory_api: "optional (e.g. ledger only); not required for sub-agent coordination"
+    shared_with_collaboration:
+      dod: "openclaw-knowledge/standards/DEFINITION_OF_DONE.md"
+      report_templates: "openclaw-knowledge/standards/report/"
+      role_skill_policy: "section 0.1 in this file (named_spawn_agents, godot_skills_policy)"
+    artifact_paths:
+      base: "<project_repo_root>/work/<agent>/"
+      recommended_subdirs: ["input", "output"]
+    primary_workflow: "team_standalone_cycle"
+
+# ---------------------------------------------------------------------------
+# 2. CONTACTS & REPORTING (from ORGANIZATION.md)
+# ---------------------------------------------------------------------------
+contacts:
+  leadership:
+    ceo: "Master Jay"
+    cto: "Winnie (My Lord)"
+  report_to: "Master Jay"
+  channel: "飞书群「福渊研发部」"
+
+# ---------------------------------------------------------------------------
+# 3. HARDWARE AND TEAMS (from ORGANIZATION.md)
+# ---------------------------------------------------------------------------
+teams:
+  vanguard001:
+    host: "树莓派"
+    ip: "192.168.3.75"
+    role_label: "项目管理、主控、Gateway"
+    team_type: coordination
+    members:
+      - id: vanguard001
+        role: "项目管理 + 技术主控"
+    responsibilities:
+      - "项目管理与全局协调、任务派发、日报与网关"
+      - "技术研究、辅助编程；Redis / Smart Factory 等服务侧协作"
+      - "按需 spawn 专业智能体执行具体任务"
+
+  hera:
+    host: "树莓派"
+    ip: "192.168.3.75"
+    role_label: "项目管理"
+    team_type: coordination
+    members:
+      - id: hera
+        role: "项目管理经理"
+    responsibilities:
+      - "阻塞登记、分类与决策；跨团队风险与依赖协调"
+      - "会议与会诊流程中的项目管理支持"
+      - "按需 spawn 专业智能体生成/更新计划与报告"
+
+  jarvis:
+    host: "Mac mini"
+    ip: "192.168.3.79"
+    role_label: "开发（主责）+ 测试"
+    team_type: development
+    members:
+      - id: jarvis
+        role: "Mac 开发团队主管"
+    responsibilities:
+      - "接收开发/修复/渲染任务；团队具备测试与验收能力（与主责开发并列）"
+      - "按任务类型 spawn 专业智能体执行"
+      - "上报代码变更、测试报告与渲染产物"
+
+  codeforge:
+    host: "Windows"
+    ip: "192.168.3.4"
+    role_label: "开发（主责）+ 测试"
+    team_type: development
+    members:
+      - id: codeforge
+        role: "Windows 开发团队主管"
+
+    responsibilities:
+      - "接收开发/修复/渲染任务；团队具备测试与验收能力（与主责开发并列）"
+      - "按任务类型 spawn 专业智能体执行"
+      - "上报代码变更、测试报告与渲染产物"
+
+  newton:
+    host: "树莓派"
+    ip: "192.168.3.82"
+    role_label: "测试与体验（主责）+ 完整开发能力"
+    team_type: test_and_development
+    members:
+      - id: newton
+        role: "游戏测试与开发团队主管（测试主责）"
+    responsibilities:
+      - "主责测试、用例、自动化与玩家体验；与 Tesla 可独立或协作"
+      - "按 Vanguard 分配承担开发与修复（含测试基建、脚本、缺陷定位、功能改动）；适用 develop_requirement 与 dev_team_cycle"
+      - "发现 bug/体验问题，创建 type=bug 或 type=enhancement，并反馈给 Hera"
+
+  tesla:
+    host: "树莓派"
+    ip: "192.168.3.83"
+    role_label: "测试与体验（主责）+ 完整开发能力"
+    team_type: test_and_development
+    members:
+      - id: tesla
+        role: "游戏测试与开发团队主管（测试主责）"
+    note: "与 Newton 同能力模型：测试 / 体验为主，同时可作为开发团队接收 feature、fix、工具与自动化类需求；develop_requirement 与 test_requirement 均为必备技能"
+
+    responsibilities:
+      - "测试与玩家体验并行；可按分配执行完整开发闭环（至 developed）"
+      - "发现问题创建 type=bug 或 type=enhancement，并反馈给 Hera"
+
+  dinosaur:
+    host: "未来 Mac NAS"
+    ip: "待确认"
+    role_label: "开发/渲染/NAS（主责）+ 测试与集成验证"
+    team_type: development
+    members:
+      - id: dinosaur
+        role: "NAS 服务主管"
+    responsibilities:
+      - "为开发/渲染提供文件与任务执行能力；团队具备测试与集成验证能力"
+      - "按需 spawn `nas-manager` 等专业智能体"
+
+# Legacy alias for workflows that refer to "roles" (team id = role key)
+roles:
+  vanguard001: { host: "树莓派", ip: "192.168.3.75", team_type: coordination }
+  hera: { host: "树莓派", ip: "192.168.3.75", team_type: coordination }
+  jarvis: { host: "Mac mini", ip: "192.168.3.79", team_type: development }
+  codeforge: { host: "Windows", ip: "192.168.3.4", team_type: development }
+  newton: { host: "树莓派", ip: "192.168.3.82", team_type: test_and_development }
+  tesla: { host: "树莓派", ip: "192.168.3.83", team_type: test_and_development }
+  dinosaur: { host: "未来 Mac NAS", ip: "待确认", team_type: development }
+
+work_log_spec:
+  required_for: ["vanguard001", "hera", "jarvis", "codeforge", "newton", "tesla", "dinosaur"]
+  report_to: "Master Jay"
+  channel: "飞书群「福渊研发部」"
+  fields:
+    - name: "时间"
+      description: "由服务端生成或记录执行时间"
+    - name: "任务名称"
+      description: "当前步骤名称"
+    - name: "任务输出"
+      description: "执行结果摘要"
+    - name: "任务下一步"
+      description: "下一步动作描述"
+  api: "POST /api/work-log"
+  body: "{ role_or_team, task_name, task_output, next_step }"
+
+# ---------------------------------------------------------------------------
+# 3. SCHEDULE (Redis 事件驱动)
+# ---------------------------------------------------------------------------
+schedule:
+  vanguard001:
+    trigger: "Redis 事件：需求可派发/任务需要转派时触发"
+    primary_skill: assign_tasks_to_teams
+    report_skill: generate_daily_report
+    meeting_heartbeat_skill: meeting_participation
+    meeting_heartbeat_agent: vanguard001
+    reliability: "指数退避重试"
+
+  dev_teams:
+    teams: ["jarvis", "codeforge", "dinosaur"]
+    trigger: "Redis Streams 消费：smartfactory:stream:tasks（consumer group）"
+    actions:
+      - "检查分配 get_team_assigned / team_sync"
+      - "领取 take_requirement"
+      - "上报状态 report_team_status"
+      - "上报机器状态 report_machine_status"
+      - "遇阻塞 report_blockage"
+      - "会议参与 meeting_participation（拉取 meetings/for-agent 并在需要时提交 inputs）"
+    offline_threshold_minutes: 40
+
+  test_teams:
+    teams: ["tesla", "newton"]
+    trigger: "Redis Streams 消费：smartfactory:stream:tasks（consumer group，assignee in tesla/newton）"
+    same_as_dev_teams: true
+    note: "Tesla/Newton 测试主责，但与 jarvis/codeforge/dinosaur 同等具备 develop_requirement；stream 事件 assignee 为本团队时，按需求类型执行 test_requirement 或 develop_requirement（及 dev_team_cycle）"
+    offline_threshold_minutes: 40
+
+  hera:
+    trigger: "Redis 阻塞事件：smartfactory:task:blocker / smartfactory:stream:blockers"
+    primary_skill: handle_blockage
+    monitor_skill: hera_monitor
+    meeting_heartbeat_skill: meeting_participation
+    meeting_heartbeat_agent: hera
+    reliability: "关键 API 调用带重试"
+
+# ---------------------------------------------------------------------------
+# 4. CLI COMMANDS (by domain)
+# ---------------------------------------------------------------------------
+cli:
+  invoke: "python3 -m cli <domain> <subcommand> [args]"
+  output_format: json
+
+  project:
+    env: "SMART_FACTORY_API"
+    commands:
+      list_requirements:
+        description: "查询需求列表"
+        example_args: "--status new --assignable true"
+      get_requirement:
+        args: "<id>"
+        description: "获取单个需求详情"
+      create_requirement:
+        description: "创建新需求（含 Bug）"
+        example_args: "--title \"...\" --type bug"
+      update_requirement:
+        args: "<id> --fields '{}'"
+        description: "更新需求字段"
+      assign_requirement:
+        args: "<id> --team <team>"
+        description: "分配需求给团队"
+      take_requirement:
+        args: "<id> --team <team> --agent <agent>"
+        description: "团队领取需求"
+      report_status:
+        description: "团队上报状态"
+        example_args: "--team <team> --requirement-id <id> --progress <pct>"
+      report_blockage:
+        description: "上报阻塞"
+        example_args: "--team --requirement-id --reason"
+      list_blockages:
+        description: "查询阻塞列表（Hera）"
+        example_args: "--status pending"
+      resolve_blockage:
+        args: "<id>"
+        description: "决策阻塞（Hera）"
+        example_args: "--decision \"...\""
+      list_teams_online:
+        description: "在线团队列表"
+      get_team_assigned:
+        args: "<team>"
+        description: "团队已分配需求"
+      report_machine_status:
+        description: "上报机器状态"
+        example_args: "--team --payload '{}'"
+      sync_pinball_plan:
+        description: "同步 pinball 计划到 DB（在 DB 所在服务器执行）"
+      record_task_usage:
+        args: "<task_id> [--add-tokens N] [--add-prompts N] [--set-tokens N] [--set-prompts N]"
+        description: "任务级粗略 LLM 用量：累计估算 token 与 prompt 轮次"
+
+  dev:
+    commands:
+      read_file: { args: "<path>", description: "读取文件内容" }
+      write_file: { args: "<path> --content \"...\"", description: "写入文件" }
+      list_dir: { args: "<path>", description: "列出目录" }
+      git_status: { args: "<repo_path>", description: "Git 状态" }
+      git_commit: { args: "<repo_path> -m \"...\"", description: "提交变更" }
+      git_push: { args: "<repo_path>", description: "推送到远程" }
+      run_command: { args: "<cmd> [args] --cwd <path>", description: "执行白名单命令" }
+      build: { args: "<project_path>", description: "执行构建" }
+
+  godot:
+    env_optional: "GODOT_BIN"
+    commands:
+      open_project: { args: "<path>", description: "验证 Godot 项目" }
+      run_scene: { args: "<scene_path> [--project-path]", description: "运行场景" }
+      export_game: { args: "<preset> <output_path>", description: "导出游戏" }
+      run_tests: { args: "[--project-path]", description: "运行 Godot 测试" }
+      parse_script: { args: "<script_path>", description: "解析 GDScript" }
+
+  test:
+    commands:
+      run_unit_tests: { args: "<framework> <test_path>", description: "单元测试（pytest/unittest）" }
+      run_integration_tests: { args: "<suite>", description: "集成测试" }
+      check_coverage: { args: "[--format json]", description: "覆盖率" }
+      parse_test_output: { args: "<file_path>", description: "解析测试输出" }
+
+  comm:
+    env: "SMART_FACTORY_API 或 FEISHU_WEBHOOK_URL"
+    commands:
+      send_feishu: { args: "--content \"...\"", description: "发送飞书消息" }
+      send_email: { args: "--to --subject --body", description: "发送邮件（可选）" }
+      analyze_feishu_logs: { args: "[--log-file]", description: "解析日志、写 DB、返回统计" }
+      get_feishu_stats: { args: "[--limit]", description: "飞书 API 每日统计" }
+      analyze_feishu_issues: { args: "[--log-file]", description: "分析日志问题" }
+
+  analysis:
+    commands:
+      analyze_code: { args: "<path>", description: "代码分析（gdlint/pylint）" }
+      extract_requirements: { args: "<doc_path>", description: "从文档提取需求" }
+      estimate_complexity: { args: "\"<text>\"", description: "估算复杂度" }
+      summarize_changes: { args: "-", description: "汇总 git diff（- 表示 stdin）" }
+
+# ---------------------------------------------------------------------------
+# 5. SKILLS (high-level workflows)
+# ---------------------------------------------------------------------------
+skills:
+  assign_tasks_to_teams:
+    actor: vanguard001
+    description: "分配需求并通过 Redis（Pub/Sub + Streams）实时派发给各团队（含 Tesla/Newton 的测试或开发任务），并汇报飞书"
+    steps:
+      - "cli project list-requirements --status new --assignable true"
+      - "cli project list-teams-online"
+      - "按优先级与负载 cli project assign-requirement <id> --team <team>（主责开发：jarvis/codeforge/dinosaur；Tesla/Newton 亦可接收 feature/fix/工具与自动化类需求）"
+      - "cli project list-requirements --status developed → assign 给 Tesla / Newton（待测）"
+      - "发布 Redis 派发事件：XADD smartfactory:stream:tasks / PUBLISH smartfactory:task:dispatch（含 taskId/requirementId/assignee/callbackChannel）"
+      - "cli comm send-feishu --content \"...\" 汇报分配结果"
+
+  handle_blockage:
+    actor: hera
+    description: "消费 Redis 阻塞事件并决策"
+    steps:
+      - "订阅/消费 Redis 阻塞事件：smartfactory:task:blocker（或消费 smartfactory:stream:blockers）"
+      - "结合事件上下文判断 L1/L2/L3，并触发会诊/分配"
+      - "若重新分配: cli project assign-requirement 给其他团队"
+      - "若延后: cli project update-requirement 设 status=blocked 或清空 assigned_team"
+      - "发布决策结果到 Redis：PUBLISH smartfactory:task:result / XADD smartfactory:stream:results"
+      - "可选 cli comm send-feishu 通知相关团队"
+
+  develop_requirement:
+    actor: dev_teams_including_test_teams
+    teams: ["jarvis", "codeforge", "dinosaur", "tesla", "newton"]
+    description: "开发闭环：分析、编码、验证、上报（jarvis/codeforge/dinosaur 与 Tesla/Newton 在被分配开发类需求时同等执行）"
+    steps:
+      - "cli project get-requirement <id> 获取需求"
+      - "cli dev read-file 读相关代码/文档"
+      - "cli analysis analyze-code 或 extract-requirements 生成分析笔记"
+      - "cli dev write-file、cli dev git-commit 做代码变更"
+      - "cli godot run-tests 或 cli test run-unit-tests 验证"
+      - "发布 Redis 结果：XADD smartfactory:stream:results（status/progress/tasks[] 等）"
+      - "可选：对本任务 cli project record-task-usage <task_id> --add-tokens … --add-prompts …（或 skills.record_task_usage）"
+      - "完成后 cli project update-requirement <id> --fields '{\"status\":\"developed\"}'"
+
+  godot_build_and_test:
+    actor: dev_teams_or_test_teams
+    description: "导出并运行测试，解析结果并上报"
+    steps:
+      - "cli godot export-game 导出目标平台"
+      - "cli godot run-tests 或 cli test run-unit-tests"
+      - "cli test parse-test-output 解析结果"
+      - "若失败则 cli comm send-feishu 报告"
+      - "cli project report-status 更新测试结果"
+
+  record_task_usage:
+    actor: any_executor_on_task
+    description: "将本任务上粗略的 LLM token 估算与 prompt 次数写入 DB（非精确计费）"
+    steps:
+      - "cli project record-task-usage <task_id> --add-tokens <n> --add-prompts <n>"
+      - "或 python3 -m skills.record_task_usage --task-id <id> --add-tokens <n> --add-prompts <n>"
+
+  test_requirement:
+    actor: test_teams
+    description: "测试团队测试需求，发现问题创建 Bug"
+    steps:
+      - "cli project get-requirement <id> 获取待测需求"
+      - "cli godot run-scene 加载相关场景"
+      - "cli godot run-tests / cli test run-unit-tests 执行自动化测试"
+      - "若发现问题: cli project create-requirement --type bug --title \"...\""
+      - "发布 Redis 结果：XADD smartfactory:stream:results（status/progress/test-results/createdBug 等）"
+      - "通过则 cli project update-requirement <id> --fields '{\"status\":\"tested\"}'"
+
+  generate_daily_report:
+    actor: vanguard001
+    description: "汇总各团队状态、风险、变更、机器状态，发飞书「福渊研发部」向 Master Jay 汇报"
+    steps:
+      - "cli project list-teams-online"
+      - "各团队 cli project get-team-assigned <team> 及状态汇总"
+      - "cli analysis summarize-changes 汇总代码变更"
+      - "cli comm send-feishu --content \"...\" 发送格式化日报"
+
+  parse_requirement_doc:
+    actor: any
+    description: "从 PRD 文档提取需求并批量创建"
+    steps:
+      - "cli analysis extract-requirements <doc>"
+      - "cli project create-requirement 批量创建"
+
+  sync_game_plan:
+    actor: vanguard001_or_ops
+    run_where: "DB 所在服务器"
+    description: "将 pinball-experience 计划同步到 DB"
+    steps:
+      - "cli project sync-pinball-plan"
+      - "或 python -m skills.sync_game_plan"
+
+  feishu_api_health_report:
+    actor: vanguard001_or_ops
+    steps:
+      - "cli comm analyze-feishu-logs"
+      - "cli comm analyze-feishu-issues"
+      - "可选 --post 发飞书"
+
+# ---------------------------------------------------------------------------
+# 6. CORE WORKFLOWS (step-by-step for agents)
+# ---------------------------------------------------------------------------
+workflows:
+  # -------- Vanguard001 协调流程（Redis 事件驱动）--------
+  vanguard_hourly:
+    skill: assign_tasks_to_teams
+    trigger: "Redis 事件：任务分发/重分配"
+    steps:
+      - step: 1
+        name: "检查在线团队数量"
+        cli: "cli project list-teams-online"
+        api: "GET /api/teams/online"
+        work_log:
+          task_name: "检查在线团队"
+          output_describe: "在线团队列表"
+          next_step: "检查需求列表"
+
+      - step: 2
+        name: "检查需求列表"
+        cli: "cli project list-requirements"
+        api: "GET /api/requirements"
+        query_params: "status, priority, id 排序"
+
+      - step: 3
+        name: "分配策略"
+        rules:
+          - "按 priority 分配，同优先级按 id 或创建时间"
+          - "负载感知: 从团队状态汇总获取任务数/剩余工时，优先分配给空闲或负载低的团队"
+          - "type=bug 视为高优先级"
+          - "仅分配 depends_on 已满足的需求"
+
+      - step: 4
+        name: "给各开发团队分发需求（含测试主责团队的开发任务）"
+        target: "开发主管（jarvis / codeforge / dinosaur）；可按负载将部分 new/bug/feature 分给 Tesla / Newton"
+        filter: "status=new，含 type=bug，未开发完成且可分配"
+        cli: "cli project assign-requirement <id> --team <team>"
+        api: "POST /api/requirements/<id>/assign"
+        body: '{"assigned_team": "jarvis"}'
+        work_log:
+          record: "分配的需求 ID、目标团队"
+          next_step: "给测试团队分配"
+
+      - step: 5
+        name: "给测试团队分发需求（tesla / newton）"
+        filter: "开发完成、尚未测试 (status=developed)"
+        cli: "cli project assign-requirement <id> --team <team>"
+        api: "POST /api/requirements/<id>/assign"
+        work_log:
+          record: "分配结果"
+          next_step: "汇总发飞书"
+
+      - step: 6
+        name: "汇总发飞书"
+        cli: "cli comm send-feishu --content \"...\""
+        api: "POST /api/feishu/post"
+        channel: "飞书群「福渊研发部」"
+        report_to: "Master Jay"
+        work_log:
+          task_name: "飞书汇总"
+          output_describe: "报告链接或摘要"
+          next_step: "等待下一周期"
+
+  # -------- 团队独立闭环（无跨设备 Redis/API 协调；与 dev_team_cycle 二选一）--------
+  team_standalone_cycle:
+    doc: "OPENCLAW_STANDALONE_WORKFLOW.md"
+    teams: ["jarvis", "codeforge", "dinosaur", "tesla", "newton"]
+    trigger: "Direct brief from Master Jay or Winnie Chen to Team Manager (resident agent)"
+    skills_primary:
+      development: "develop_requirement"
+      testing: "test_requirement"
+    note: |
+      Do not use smartfactory:stream:tasks consumer loop as the task source. Team-internal checklist
+      or local files replace DB/Redis assignee flow unless leadership opts into optional API ledger.
+    steps:
+      - step: 1
+        name: "Team Manager：接收领导直接需求"
+        description: "确认项目仓库、范围、验收口径、截止时间与是否写入 Smart Factory DB（可选）"
+        work_log:
+          task_name: "接收 brief"
+          output_describe: "范围摘要、项目路径"
+          next_step: "读项目文档与差距分析"
+
+      - step: 2
+        name: "阅读项目需求文档并对照已实现功能"
+        cli: "cli dev read-file / cli analysis extract-requirements（按需）"
+        description: "在 <project_repo_root>/docs/ 等与 brief 指向处建立 gap 列表（未实现/部分实现/缺陷）"
+
+      - step: 3
+        name: "拆解子任务并 spawn 预定义子代理"
+        description: |
+          遵循 role_skill_policy 与本团队 named_spawn_agents / optional_spawn_specialists；
+          通过 sessions_spawn 启动 executor；维护团队内 协作scrum.md 或等价任务板（无需 Redis 派发）。
+        same_policy_as: "dev_team_cycle step 3 (spawn enforcement, executor_spawned)"
+
+      - step: 4
+        name: "开发、测试、评审/验收"
+        description: |
+          开发：develop_requirement 路径与 Godot 策略（godogen / godot-task）与协作模式相同。
+          测试：cli test / cli godot run-tests；测试主责团队沿用 test_requirement 心智。
+          评审：Team Manager 确认 DEFINITION_OF_DONE（含 0.1–0.5 验证、Git 流程、文档）。
+
+      - step: 5
+        name: "产物写入项目 work 目录"
+        description: "input/ 放 brief 摘要与引用；output/ 放日志、测试报告、截图索引（见 standalone_doc §5）"
+        path: "<project_repo_root>/work/<agent>/{input,output}/"
+
+      - step: 6
+        name: "Git：提交并推送远端"
+        cli: "cli dev git-commit / cli dev git-push"
+        dod: "openclaw-knowledge/standards/DEFINITION_OF_DONE.md"
+
+      - step: 7
+        name: "向 Master Jay 汇报最终结果"
+        channel: "飞书群「福渊研发部」"
+        templates:
+          - "openclaw-knowledge/standards/report/DEVELOPMENT_TASK_REPORT_TEMPLATE.md"
+          - "openclaw-knowledge/standards/report/TEST_TASK_REPORT_TEMPLATE.md"
+        content: "交付摘要、变更列表、work/ 证据路径、commit 或 PR 引用"
+
+  # -------- 开发团队流程（Redis 事件驱动）--------
+  dev_team_cycle:
+    skill: develop_requirement
+    teams: ["jarvis", "codeforge", "dinosaur", "tesla", "newton"]
+    trigger: "Redis 事件：smartfactory:task:dispatch / stream:tasks（consumer group dev-teams；Tesla/Newton 在承担开发分配时与本流程一致）"
+    roles:
+      team_main:
+        description: |
+          当前 assignee 团队的 resident 主智能体：jarvis/codeforge/dinosaur 为主责开发；
+          tesla/newton 在承担开发、修复或测试基建类分配时与本流程同等执行（纯待测需求优先走 tesla_cycle/newton_cycle）。
+          Team Main 负责 Spawn executor、汇总执行结果并上报。
+    steps:
+      - step: 1
+        name: "Team Main：检查协作scrum与 Spawn 状态"
+        description: |
+          每次收到 Redis 任务事件执行一次（Team Main 主责）：
+          1) 读取 `organization/workspace/<team>/协作scrum.md`，核对每个子任务 executor 的 `executor_spawned=true`。
+          2) 与 DB 对齐：`cli project get-team-assigned <team>`（**辅助**；**任务触发以 stream:tasks 为准**）。
+          3) 对进行中需求的子任务做一致性检查（以 **`stream:results` / `report-status`** 同步到 DB 的 tasks[] 为准；可选用 `cli project list-tasks <requirement_id>`）。
+          4) 若发现某 executor_spawned=false：立刻触发 OpenClaw `sessions_spawn` 启动该 executor（等待其上报首轮机器状态/心跳），并在 `协作scrum.md` 更新 spawned 时间戳。
+          5) 若已 spawned 但子任务在上一轮后仍无进展（stale >= 20 分钟）：先询问对应 sub-agent；若仍未正确 spawn/无响应，则立即再次 spawn 并启动。
+        cli: "cli project get-team-assigned <team>"
+        api: "GET /api/teams/<team>/assigned-requirements"
+        work_log:
+          task_name: "拉取分配需求"
+          output_describe: "需求 ID 列表"
+          next_step: "领取/分析"
+
+      - step: 2
+        name: "领取任务"
+        cli: "cli project take-requirement <id> --team <team> --agent <agent>"
+        api: "POST /api/requirements/<id>/take"
+        body: '{"assigned_team": "<team>", "assigned_agent": "<agent>"}'
+        assigned_agent_examples:
+          jarvis: "jarvis（resident 主智能体；由其 spawn 专业智能体作为 executor）"
+          codeforge: "codeforge（resident 主智能体；由其 spawn 专业智能体作为 executor）"
+          dinosaur: "dinosaur（resident 主智能体；由其 spawn 专业智能体作为 executor）"
+          tesla: "tesla（测试主责；开发分配时与同上，spawn game-tester / mac-developer / bug-fixer 等）"
+          newton: "newton（测试主责；开发分配时与同上）"
+
+      - step: 3
+        name: "主智能体：需求分析与 Spawn executor（≤ 2 小时粒度）"
+        description: |
+          Team Main（jarvis/codeforge/dinosaur/tesla/newton 中当前 assignee 团队）基于需求分析拆解为预估用时不超过 2 小时的子任务（含目标、验收条件、depends_on、依赖关系），并为每个子任务选择 executor（专业智能体 id）。
+
+          建议的 executor 映射：
+          - 开发：`mac-developer` / `win-developer`
+          - 修复：`bug-fixer`
+          - 渲染：`render-engineer`
+          - NAS 类（未来）：`nas-manager`
+
+          Spawn enforcement（防止“分配给未启动的 agent”）：
+          1) 在为子任务指定 executor 前，必须确认该 executor 会话已通过 OpenClaw `sessions_spawn` 启动，并满足 `executor_spawned=true`（以 `协作scrum.md` 为准）。
+          2) 若存在 executor_spawned=false：Team Main 先触发 `sessions_spawn` 并等待 executor 首轮上线/心跳。
+          3) 如 executor 无响应：禁止“自行兜底直接做完”，应通过阻塞/询问机制把问题交回 Team Main / Hera，并触发需要的再 spawn 或会诊。
+        work_log:
+          task_name: "需求分析与任务拆解（Spawn）"
+          output_describe: "子任务列表、depends_on、executor（专业智能体 id）、预估工时"
+          next_step: "专业智能体执行"
+
+      - step: 4
+        name: "专业智能体执行与 Team Main 进度跟踪"
+        description: |
+          专业智能体（executor）按分配的子任务执行开发/修复/渲染；Team Main 在每轮 dev_team_cycle 或团队约定的站会时检查子任务状态。
+          对超过预估工时 1.5 倍仍未完成的子任务，Team Main 主动发起进度询问并收集原因（技术难题/环境问题/依赖阻塞等）。
+          发现 executor_spawned=false 或子任务长期处于 pending：Team Main 需要立即触发 `sessions_spawn` 再拉起对应 executor，并同步更新 `协作scrum.md`。
+
+      - step: 5
+        name: "团队负责人上报状态（发布 Redis 结果）"
+        cli: "XADD smartfactory:stream:results（status/progress/tasks[] 等）"
+        payload_note: "requirement_id, progress, tasks[]；events 写入与 DB 同步字段对齐（子任务、executor、risk、blocker、next_step_task_id 等）"
+
+      - step: 6
+        name: "需求/任务完成时"
+        description: "提交《开发任务报告》，随 status-report 或 task-detail 上报"
+        template: "openclaw-knowledge/standards/report/DEVELOPMENT_TASK_REPORT_TEMPLATE.md"
+
+      - step: 7
+        name: "若遇到阻塞（发布 Redis blocker 事件）"
+        cli: "PUBLISH smartfactory:task:blocker（或 XADD smartfactory:stream:blockers）"
+        body: "{ 'team', 'requirement_id', 'task_id?', 'reason', 'options?', 'level': 'L1|L2|L3' }"
+        work_log:
+          record: "阻塞等级与原因、已尝试方案"
+          next_step: "等待 Hera 决策或专家会诊"
+
+  # -------- Tesla 团队流程（测试 + 玩家体验，Redis 事件驱动）--------
+  tesla_cycle:
+    primary_skill: test_requirement
+    alternate_skill: develop_requirement
+    note: "若当前分配为开发/fix/工具类，改用 dev_team_cycle + develop_requirement；否则以 test_requirement 为主"
+    team: tesla
+    trigger: "Redis 事件：smartfactory:task:dispatch / stream:tasks（assignee=tesla）"
+    steps:
+      - step: 1
+        name: "检查分配、领取测试需求"
+        same_as: "dev_team_cycle steps 1-2"
+
+      - step: 2
+        name: "执行测试"
+        cli: "cli godot run-scene / cli godot run-tests"
+        on_find_issue: "见 workflow tesla_create_bug"
+
+      - step: 3
+        name: "玩家体验游玩与改进收集（补充工作，可与测试并行或在空闲时执行）"
+        description: "以玩家视角游玩关键流程，收集体验问题/不足/改进点；若属于 Bug 则走 tesla_create_bug；若属于非 Bug 的功能/体验/平衡改进则创建 type=enhancement 的改进建议"
+        cli: "cli godot run-scene <play_scene_path> [--project-path <game_path>]"
+        on_find_issue: "见 workflow tesla_create_enhancement"
+
+      - step: 4
+        name: "本周期结束汇报"
+        description: "如本周期包含测试执行：提交《测试任务报告》，并发布 Redis 结果（smartfactory:stream:results）；同时将玩家体验改进要点写入 results/tasks[]"
+        template: "openclaw-knowledge/standards/report/TEST_TASK_REPORT_TEMPLATE.md"
+
+  # -------- Tesla 发现 Bug：创建 Bug 需求 --------
+  tesla_create_bug:
+    trigger: "测试过程中发现问题"
+    steps:
+      - step: 1
+        name: "创建 Bug 需求"
+        api: "POST /api/requirements"
+        body: "type: \"bug\", title, description, project_id；description 中可说明关联原需求或步骤"
+      - step: 2
+        note: "Vanguard 下一轮分配时将 status=new 的 Bug 分配给开发团队；修复完成后需求关闭，测试可再次验证"
+
+  # -------- Tesla 玩家体验：创建改进建议（enhancement）--------
+  tesla_create_enhancement:
+    trigger: "玩家体验游玩过程中发现非 Bug 的改进点（UX/玩法/引导/平衡/可用性等）"
+    steps:
+      - step: 1
+        name: "创建 Enhancement 需求"
+        api: "POST /api/requirements"
+        body: "type: \"enhancement\", title, description, project_id；description 中可说明期望行为、当前行为、可复现步骤/场景与影响范围"
+      - step: 2
+        note: "Vanguard 下一轮分配时将 status=new 的 enhancement 分配给开发主管实现；实现完成后 测试团队/玩家再次验证体验"
+
+  # -------- Newton 团队流程（游戏测试 + 玩家体验，Redis 事件驱动）--------
+  newton_cycle:
+    primary_skill: test_requirement
+    alternate_skill: develop_requirement
+    note: "若当前分配为开发/fix/工具类，改用 dev_team_cycle + develop_requirement；否则以 test_requirement 为主"
+    team: newton
+    trigger: "Redis 事件：smartfactory:task:dispatch / stream:tasks（assignee=newton）"
+    steps:
+      - step: 1
+        name: "检查分配、领取测试需求"
+        same_as: "dev_team_cycle steps 1-2"
+
+      - step: 2
+        name: "执行测试"
+        cli: "cli godot run-scene / cli godot run-tests"
+        on_find_issue: "见 workflow tesla_create_bug"
+
+      - step: 3
+        name: "玩家体验游玩与改进收集（补充工作，可与测试并行或在空闲时执行）"
+        description: "以玩家视角游玩关键流程，收集体验问题/不足/改进点；若属于 Bug 则走 tesla_create_bug；若属于非 Bug 的功能/体验/平衡改进则创建 type=enhancement 的改进建议"
+        cli: "cli godot run-scene <play_scene_path> [--project-path <game_path>]"
+        on_find_issue: "见 workflow tesla_create_enhancement"
+
+      - step: 4
+        name: "本周期结束汇报"
+        description: "如本周期包含测试执行：提交《测试任务报告》，并发布 Redis 结果（smartfactory:stream:results）；同时将玩家体验改进要点写入 results/tasks[]"
+        template: "openclaw-knowledge/standards/report/TEST_TASK_REPORT_TEMPLATE.md"
+
+  # -------- 开发团队依赖阻塞：Hera 重新分配/延后 --------
+  blockage_flow:
+    trigger: "开发团队因依赖无法完成"
+    steps:
+      - step: 1
+        name: "开发团队上报（发布 Redis 阻塞事件）"
+        cli: "PUBLISH smartfactory:task:blocker（或 XADD smartfactory:stream:blockers）"
+        reason_note: "注明「依赖前置任务未完成」及 depends_on"
+
+      - step: 2
+        name: "Hera 处理（阻塞事件 -> 会议 -> 结论）"
+        skill: handle_blockage
+        decisions:
+          - "若 blockage.meeting_id 为空：发起会诊会议（POST /api/meetings），填写会议主题/问题/参会人员与各方 contribute_focus；保持 blockage pending 直至会后结论"
+          - "若 blockage.meeting_id 存在且 meetings.status=concluded：使用会议 conclusion_summary/decision 作为 decision，PATCH /api/discussion/blockage/<id> 为 resolved"
+          - "需求创建与分配由主持人（hera 或 vanguard001）在会议 finalize（POST /api/meetings/<id>/finalize）中完成"
+        work_log:
+          task_name: "处理阻塞"
+          output_describe: "决策摘要"
+          next_step: "更新需求状态/重新分配"
+
+      - step: 3
+        name: "前置完成后"
+        description: "原被延后需求由 Vanguard 或 Hera 再次分配，团队领取并修复"
+
+  # -------- Hera 协调流程（Redis 事件驱动）--------
+  hera_cycle:
+    skill: handle_blockage
+    trigger: "Redis 阻塞事件"
+    steps:
+      - step: 1
+        name: "消费阻塞事件（Redis）"
+        cli: "consume smartfactory:task:blocker / XREAD smartfactory:stream:blockers"
+        api_risk: "GET /api/dashboard/risk-report"
+        work_log:
+          task_name: "检查阻塞与风险"
+          output_describe: "待处理条数"
+          next_step: "决策"
+
+      - step: 2
+        name: "做出决定（阻塞会诊）"
+        actions: "基于 blockage 事件：若 meeting_id 为空则 POST /api/meetings 发起会诊，若 concluded 则 PATCH /api/discussion/blockage/<id> 为 resolved；需求创建/分配在会议 finalize 中完成"
+        work_log: "每项决策（任务名称、输出、下一步）"
+
+      - step: 3
+        name: "团队继续工作"
+        description: "直至需求/任务完成"
+
+      - step: 4
+        name: "日报由 Vanguard 执行"
+        skill: generate_daily_report
+
+  # -------- 会议机制（可选 heartbeat；必要时参与）--------
+  meeting_flow:
+    trigger: "1) 发生上报的阻塞（discussion_blockage）；2) 或由 hera/vanguard001 接收到特定会议主题后主动发起"
+    steps:
+      - step: 1
+        name: "主持人发起会议（hera 或 vanguard001）"
+        api: "POST /api/meetings"
+        host_sets:
+          - "topic：会议主题"
+          - "problem_to_solve：要解决的问题"
+          - "participants：参会人员（agent id 列表）与 contribute_focus"
+          - "status=current_round=running"
+      - step: 2
+        name: "所有 agent 每 15 分钟 heartbeat 检测并加入"
+        heartbeat_skill: meeting_participation
+        api: "GET /api/meetings/for-agent?agent=<agent>"
+        agent_logic:
+          - "若返回 needs_your_input=true：读取会议主题/你的 contribute_focus"
+          - "分析后用 API 写入自己的 analysis/comments：POST /api/meetings/<id>/inputs"
+          - "之后轮询 GET /api/meetings/<id>/inputs 读取其他 agent 的输入，直到主持人 finalize 并把 status 置为 concluded"
+      - step: 3
+        name: "主持人收敛共识并 finalize"
+        api: "POST /api/meetings/<id>/finalize"
+        host_actions:
+          - "填写 conclusion_summary / conclusion_decision"
+          - "创建 requirements 并写入 assigned_team/assigned_agent（用于后续 team_sync 领取）"
+      - step: 4
+        name: "会议结束"
+        agent_logic:
+          - "当 meetings.status=concluded：结束会议参与"
+
+  # -------- 团队上报通道 (Team → Redis → Hera/Vanguard → Feishu) --------
+  reporting_channel:
+    team_report:
+      stream: "XADD smartfactory:stream:results"
+      payload:
+        requirement_id: null
+        requirement_title: null
+        progress_percent: null
+        step: null
+        tasks:
+          - id: null
+            title: null
+            status: null
+            executor: null
+            analysis_notes: null
+            assignment_notes: null
+            development_notes: null
+        machine_info: null
+      note: "支持增量上报；GET ?since=<timestamp> 增量拉取"
+      active_criteria: "最近一次上报 40 分钟内视为 active，否则 offline"
+
+    task_detail:
+      api: "POST /api/teams/<team>/task-detail"
+      body: "requirement_id, task_id, detail_type: analysis|assignment|development, content"
+
+    hera_summary:
+      apis:
+        - "GET /api/teams/status-report/summary"
+        - "GET /api/teams/development-details/summary"
+
+    vanguard_final:
+      skill: generate_daily_report
+      inputs: "status-report/summary, development-details/summary, risk-report, machine-status"
+      output: "团队状态与任务明细、各团队开发过程细节、风险、机器状态 → 飞书「福渊研发部」向 Master Jay 汇报"
+
+# ---------------------------------------------------------------------------
+# 7. API REFERENCE (key endpoints for agents)
+# ---------------------------------------------------------------------------
+api:
+  requirements:
+    list: "GET /api/requirements"
+    list_query: "?status=, ?priority=, ?assigned_team=, ?assignable=1, ?sort=priority_asc|created_asc"
+    assign: "POST /api/requirements/<rid>/assign"
+    assign_body: '{"assigned_team": "jarvis"}; 依赖未满足返回 400'
+    update: "PATCH /api/requirements/<rid>"
+    update_note: "Hera 可设 status=blocked 或清空 assigned_team"
+    take: "POST /api/requirements/<id>/take"
+
+  teams:
+    assigned: "GET /api/teams/<team>/assigned-requirements"
+    assigned_alt: "GET /api/teams/assigned-requirements?team=jarvis"
+    online: "GET /api/teams/online"
+    status_report: "POST /api/teams/<team>/status-report"
+    status_report_get: "GET /api/teams/<team>/status-report?since=<ts>"
+    status_summary: "GET /api/teams/status-report/summary"
+    task_detail: "POST /api/teams/<team>/task-detail"
+    task_details_get: "GET /api/teams/<team>/task-details"
+    report: "POST /api/teams/<team>/report"
+    development_details_summary: "GET /api/teams/development-details/summary"
+    machine_status: "POST|GET /api/teams/<team>/machine-status"
+    machine_summary: "GET /api/teams/machine-status/summary"
+
+  discussion:
+    blockage_post: "POST /api/discussion/blockage"
+    blockage_body: "{ team, requirement_id, task_id?, reason, options? }"
+    blockages_list: "GET /api/discussion/blockages?status=pending"
+    blockage_resolve: "PATCH /api/discussion/blockage/<id>"
+
+  dashboard:
+    risk_report: "GET /api/dashboard/risk-report"
+
+  work_log:
+    post: "POST /api/work-log"
+    list: "GET /api/work-logs?role_or_team=&since=&limit="
+
+  feishu:
+    post: "POST /api/feishu/post"
+
+  discovery: "GET /api/ 或 GET http://<host>:5000/api/ 返回端点列表"
+
+# ---------------------------------------------------------------------------
+# 8. COMMON MISTAKES (correct usage)
+# ---------------------------------------------------------------------------
+api_correct_usage:
+  - wrong: "GET /api/teams/requirements"
+    correct: "GET /api/teams/jarvis/assigned-requirements 或 GET /api/teams/assigned-requirements?team=jarvis"
+  - wrong: "POST /api/requirements/assign（缺少 id）"
+    correct: "POST /api/requirements/74/assign"
+  - wrong: "GET /api/teams//assigned-requirements（双斜杠）"
+    correct: "GET /api/teams/jarvis/assigned-requirements"
+
+# ---------------------------------------------------------------------------
+# 9. REPORT TEMPLATES
+# ---------------------------------------------------------------------------
+report_templates:
+  team_status: "openclaw-knowledge/standards/report/TEAM_STATUS_REPORT_TEMPLATE.md"
+  final_daily: "openclaw-knowledge/standards/report/FINAL_DAILY_REPORT_TEMPLATE.md"
+  development_task: "openclaw-knowledge/standards/report/DEVELOPMENT_TASK_REPORT_TEMPLATE.md"
+  test_task: "openclaw-knowledge/standards/report/TEST_TASK_REPORT_TEMPLATE.md"
+  report_readme: "openclaw-knowledge/standards/report/README.md"

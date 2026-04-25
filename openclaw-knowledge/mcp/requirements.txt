@@ -1,0 +1,4 @@
+# MCP servers and skills (Smart Factory)
+# Install: pip install -r mcp/requirements.txt
+mcp>=1.0.0
+requests>=2.28.0
