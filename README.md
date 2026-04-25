@@ -75,3 +75,52 @@ API 将在 http://localhost:5000 启动。
 ---
 
 *智慧工厂 - OpenClaw 知识库与管理系统*
+
+---
+
+## 功能特性
+
+### Phase 1: 核心框架
+- GraphState 状态机
+- DemandAnalyst / Architect / DetailDesigner Agent
+- Redis / API / Git / Feishu 工具层
+- CLI 和 REST API
+
+### Phase 2: Worker 架构
+- Worker 基类
+- Dispatcher 任务派发
+- 状态监控 API
+
+### Phase 3: 游戏支持
+- GamePlayEvaluator Agent
+- GodotTools 集成
+- 游戏性评估 (fun_rating 1-5)
+
+### Phase 4: 自动化
+- HumanApproval Agent (人工审批)
+- CICD Orchestrator (构建/发布)
+- 飞书审批卡片
+
+### Phase 5: 监控
+- 完整监控仪表盘
+- 实时状态 API
+- 历史活动时间线
+
+## 项目状态
+
+| Phase | 状态 |
+|-------|------|
+| Phase 1 | ✅ 完成 |
+| Phase 2 | ✅ 完成 |
+| Phase 3 | ✅ 完成 |
+| Phase 4 | ✅ 完成 |
+| Phase 5 | ✅ 完成 |
+
+**总进度: 100%**
+
+## 快速链接
+
+- [需求文档](docs/LANGFLOW_FACTORY_REQUIREMENTS.md)
+- [架构文档](docs/ARCHITECTURE.md)
+- [Agent 设计](docs/AGENTS.md)
+- [部署指南](docs/DEPLOYMENT.md)
