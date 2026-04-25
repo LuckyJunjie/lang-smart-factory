@@ -123,3 +123,24 @@ def get_global_workflow_status():
         "active_tasks": 3,
         "nodes": ["analysis", "architecture", "detail_design", "dispatch", "implementation", "testing", "acceptance", "release"]
     })
+
+@app.route("/dashboard/full")
+def langflow_full_dashboard():
+    """完整监控仪表盘"""
+    return send_from_directory('templates', 'langflow_full_dashboard.html')
+
+@app.route("/api/v1/dashboard/stats")
+def get_dashboard_stats():
+    """获取仪表盘统计数据"""
+    return jsonify({
+        "active_projects": 2,
+        "total_tasks": 48,
+        "passed": 42,
+        "running": 3,
+        "failed": 3,
+        "recent": [
+            {"step": "代码实现中", "status": "running", "time": "11:15:00"},
+            {"step": "详细设计完成", "status": "success", "time": "11:00:00"},
+            {"step": "架构设计完成", "status": "success", "time": "10:45:00"},
+        ]
+    })
