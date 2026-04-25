@@ -73,3 +73,35 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 5001))
     debug = os.getenv("DEBUG", "false").lower() == "true"
     app.run(host="0.0.0.0", port=port, debug=debug)
+
+
+@app.route("/api/v1/workflow/state/<project_id>", methods=["GET"])
+def get_workflow_state(project_id):
+    """获取工作流状态"""
+    from src.tools.redis_tools import RedisTools
+    redis = RedisTools()
+    state = redis.load_state(project_id)
+    if state:
+        return jsonify(state)
+    return jsonify({"error": "State not found"}), 404
+
+
+@app.route("/api/v1/workflow/state/<project_id>", methods=["PUT"])
+def save_workflow_state(project_id):
+    """保存工作流状态"""
+    from src.tools.redis_tools import RedisTools
+    data = request.json
+    redis = RedisTools()
+    redis.save_state(project_id, data)
+    return jsonify({"status": "saved"})
+
+
+@app.route("/api/v1/workers/list", methods=["GET"])
+def list_workers():
+    """列出活跃 Worker"""
+    return jsonify({
+        "workers": [
+            {"name": "implementation-worker", "status": "running"},
+            {"name": "test-worker", "status": "running"},
+        ]
+    })

@@ -38,3 +38,11 @@ lint:
 	@command -v ruff >/dev/null 2>&1 && ruff check src/ || echo "ruff not installed"
 
 .DEFAULT_GOAL := help
+
+start-workers:
+	@echo "Starting LangFlow Workers..."
+	@python workers/implementation_worker.py &
+	@echo "Implementation Worker started"
+
+worker-status:
+	@curl -s http://localhost:5001/api/v1/workers/list | python -m json.tool 2>/dev/null || echo "Workers API not running"
