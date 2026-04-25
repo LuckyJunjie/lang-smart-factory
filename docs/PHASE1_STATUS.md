@@ -2,6 +2,8 @@
 
 ## 状态: ✅ 完成
 
+**注意:** Phase 1-3 已合并到主分支。
+
 ## 已实现
 - [x] GraphState 定义
 - [x] BaseAgent 基类
