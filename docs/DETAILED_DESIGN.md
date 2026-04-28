@@ -593,4 +593,171 @@ workflow:
 
 ---
 
-*详细设计版本: 1.0 | 适用于 LangFlow Factory v2.0*
+## 7. 全局 ReAct 验证环
+
+ReAct (Reasoning + Acting) 贯穿所有 LLM 环节，每个 Agent 的输出都经过验证，不合格则重试。
+
+### 7.1 ReAct 循环定义
+
+```python
+def react_loop(agent_func, input_data, max_retries=3):
+    """
+    通用 ReAct 循环。
+    执行 agent_func(input_data)，验证输出，不合格则反馈重试。
+    """
+    for attempt in range(max_retries):
+        result = agent_func(input_data)
+        
+        # 验证输出
+        is_valid, errors = validate(result)
+        
+        if is_valid:
+            return result
+        
+        if attempt < max_retries - 1:
+            # 将错误反馈给 Agent，重新生成
+            feedback = {
+                "attempt": attempt + 1,
+                "errors": errors,
+                "suggestion": generate_suggestion(errors, result)
+            }
+            input_data["_feedback"] = feedback
+            print(f"[ReAct] Attempt {attempt+1} failed: {errors}, retrying...")
+    
+    # 超过最大重试次数，返回最后结果（标记为部分成功）
+    result["_react_status"] = "max_retries_exceeded"
+    return result
+```
+
+### 7.2 各环节 ReAct 验证点
+
+| 环节 | 验证函数 | 失败标准 |
+|------|----------|----------|
+| DemandAnalyst | `validate_requirements()` | JSON 格式错误、缺少必填字段、priority 无效 |
+| Architect | `validate_architecture()` | 模块缺失、循环依赖、架构不合理 |
+| DetailDesigner | `validate_tasks()` | 任务覆盖不完整、依赖有环、估计工时缺失 |
+| OpenClaw 执行 | `verify_output()` | acceptance_criteria 未满足、文件不存在 |
+
+### 7.3 validate_requirements 实现
+
+```python
+def validate_requirements(requirements) -> tuple[bool, list]:
+    """验证结构化需求是否符合规格"""
+    errors = []
+    
+    if not isinstance(requirements, list):
+        errors.append("requirements must be a list")
+        return False, errors
+    
+    required_fields = ["id", "title", "type", "priority", "description", "acceptance_criteria"]
+    valid_types = ["feature", "performance", "ux", "security"]
+    valid_priorities = ["high", "medium", "low"]
+    
+    for i, req in enumerate(requirements):
+        for field in required_fields:
+            if field not in req:
+                errors.append(f"REQ[{i}] missing field: {field}")
+        
+        if req.get("type") not in valid_types:
+            errors.append(f"REQ[{i}] invalid type: {req.get('type')}")
+        
+        if req.get("priority") not in valid_priorities:
+            errors.append(f"REQ[{i}] invalid priority: {req.get('priority')}")
+        
+        if not isinstance(req.get("acceptance_criteria", []), list):
+            errors.append(f"REQ[{i}] acceptance_criteria must be list")
+    
+    return len(errors) == 0, errors
+```
+
+### 7.4 verify_output 实现
+
+```python
+def verify_output(result: dict, task: dict) -> tuple[bool, list]:
+    """验证 OpenClaw 输出是否符合 acceptance_criteria"""
+    errors = []
+    
+    # 检查状态
+    if result.get("status") != "completed":
+        errors.append(f"Task status is {result.get('status')}, expected completed")
+    
+    # 检查输出文件存在
+    output_file = result.get("output_file")
+    if output_file and not os.path.exists(output_file):
+        errors.append(f"Output file does not exist: {output_file}")
+    
+    # 检查错误日志
+    if result.get("errors"):
+        errors.extend(result["errors"])
+    
+    return len(errors) == 0, errors
+```
+
+### 7.5 ReAct 集成到 DemandAnalyst
+
+```python
+class DemandAnalyst:
+    def process(self, state: Dict) -> Dict:
+        requirement = state.get("raw_requirement", "")
+        prompt = ANALYSIS_PROMPT_TEMPLATE.format(requirement=requirement)
+        
+        # 使用 ReAct 循环
+        result = react_loop(self._call_llm, prompt)
+        
+        try:
+            requirements = json.loads(result["content"])
+            is_valid, errors = validate_requirements(requirements)
+            
+            if not is_valid:
+                state["_react_feedback"] = {"errors": errors}
+                # 下次调用时会带上 feedback
+            
+            state["structured_requirements"] = requirements
+        except json.JSONDecodeError:
+            state["error"] = "Failed to parse requirements JSON"
+        
+        state["current_step"] = "architect"
+        return state
+```
+
+### 7.6 ReAct Loop 数据流
+
+```
+Agent 生成输出
+      ↓
+validate(output)
+      ↓
+ ┌───┴───┐
+Pass    Fail → 写 feedback → Agent 读取 feedback → 重新生成
+                                ↑                        │
+                                └────────────────────────┘
+                          (最多 3 次重试)
+```
+
+---
+
+*详细设计版本: 2.0 | 适用于 LangFlow Factory v3.0*
+
+## 8. OpenClaw Agent 集成 (Mode B)
+
+### 8.1 任务文件格式
+
+见 README.md 和 AGENTS.md。
+
+### 8.2 Executor 入口
+
+```bash
+python3 -m src.skills.langflow_executor --watch  # 持续监控
+python3 -m src.skills.langflow_executor --project <id>  # 单项目
+python3 -m src.skills.langflow_executor --dry-run  # 预览不执行
+```
+
+### 8.3 OpenClaw Cron 配置
+
+```cron
+*/5 * * * * cd /home/pi/.openclaw/workspace/lang-smart-factory && python3 -m src.skills.langflow_executor >> /tmp/langflow_executor.log 2>&1
+```
+
+---
+
+*详细设计版本: 2.0 | 适用于 LangFlow Factory v3.0*
