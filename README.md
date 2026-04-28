@@ -1,126 +1,154 @@
-# Smart Factory - OpenClaw 知识库
+# LangFlow Factory
 
-> 福渊研发部 AI 驱动的软件开发管理系统
+**基于 LangChain/LangGraph 的智能软件开发流水线**
 
-## 📋 项目目标
+输入自然语言需求 → LangGraph 编排 → OpenClaw 执行 → 输出软件产物
 
-智慧工厂是 OpenClaw 的知识库与管理系统，旨在：
+---
 
-- **工作方式**：定义 OpenClaw 代理/团队的工作流程与协作规范
-- **需求管理**：维护需求全生命周期
-- **项目管理**：管理项目、进度、GDD 关联
-- **资源监控**：监控团队资源（机器、Runner）
-- **工具链管理**：记录 CLI、Skills、Extensions 及潜在工具
-- **组织架构**：维护完整团队结构，便于代理学习与协作
-
-## 📁 目录结构
+## 系统架构
 
 ```
-# 仓库根目录
-├── core/                         # Smart Factory 运行时：API、SQLite、migrations、devops
-├── openclaw-knowledge/           # OpenClaw 知识库：workflows、standards、组织与工作区、CLI、skills、MCP、scripts
-├── docs/                         # API / 系统规格、HIGH_REQUIREMENTS 等
-├── tests/                        # pytest
-├── archived/                     # 历史游戏文档、监控配置、会议脚本、实验文档（参考用）
-├── AGENTS.md
-└── README.md                     # 本文件
+用户输入自然语言需求
+        ↓
+DemandAnalyst (MiniMax LLM 分析)
+        ↓
+Architect (MiniMax LLM 设计)
+        ↓
+DetailDesigner (MiniMax LLM 拆解)
+        ↓
+TaskCoordinator (写入任务文件)
+        ↓
+OpenClaw (Claude Code/Codex) 读取任务，执行，写入结果
+        ↓
+验证 → 交付
 ```
 
-## 🤖 Agent 快速入门
+### 核心组件
 
-**所有 AI 代理必须：**
+| 组件 | 职责 |
+|------|------|
+| `cli.py` | 命令行入口 |
+| `api_server.py` | REST API 服务 (port 5666) |
+| `src/workflows/development_workflow.py` | 工作流引擎 |
+| `src/agents/demand_analyst.py` | 需求分析 (LLM) |
+| `src/agents/architect.py` | 架构设计 (LLM) |
+| `src/agents/detail_designer.py` | 详细设计 (LLM) |
+| `src/llm/minimax_client.py` | MiniMax M2.7 LLM 客户端 |
+| `workers/task_coordinator.py` | 任务协调器 (文件队列) |
 
-1. **明确服务对象** — 在 **`openclaw-knowledge/organization/workspace/<团队>/<代理>/USER.md`**（或 OpenClaw 生成的工作区中的同名文件）确认汇报对象；仓库根目录**没有** `USER.md`。
-2. **按角色执行** — 遵循 **[OpenClaw Development Flow](openclaw-knowledge/workflows/OPENCLAW_DEVELOPMENT_FLOW.yaml)** 中为本团队/本代理定义的角色与流程（协调、开发、测试、阻塞处理等），使用其中规定的 CLI、技能与工作流。
-3. **遵守报告与 DoD** — 使用流程中规定的报告模板（见 `openclaw-knowledge/standards/report/`），并满足 **[Definition of Done](openclaw-knowledge/standards/DEFINITION_OF_DONE.md)**。
+---
 
-完整入口与必读顺序见 **[AGENTS.md](AGENTS.md)**；详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+## 目录结构
 
-## 🔗 快速导航
+```
+lang-smart-factory/
+├── cli.py                          # CLI: python cli.py run "<需求>" --project-id <id>
+├── api_server.py                   # API: POST http://localhost:5666/api/v1/workflow/run
+├── src/
+│   ├── llm/
+│   │   └── minimax_client.py        # MiniMax M2.7 LLM 统一入口
+│   ├── agents/
+│   │   ├── demand_analyst.py       # 需求分析 Agent
+│   │   ├── architect.py            # 架构设计 Agent
+│   │   └── detail_designer.py      # 详细设计 Agent
+│   ├── workflows/
+│   │   └── development_workflow.py # 工作流 (7个节点)
+│   ├── graph_state.py              # 状态定义
+│   ├── models.py                   # 数据模型
+│   └── tools/
+│       ├── api_tools.py            # 飞书通知
+│       ├── git_tools.py            # Git 操作
+│       └── godot_tools.py           # Godot 工具
+├── workers/
+│   └── task_coordinator.py         # 任务协调器 (文件队列)
+├── docs/
+│   ├── LANGFLOW_FACTORY_REQUIREMENTS.md  # 需求规格
+│   ├── ARCHITECTURE.md             # 架构文档
+│   └── DETAILED_DESIGN.md          # 详细设计
+└── openclaw-knowledge/             # OpenClaw 知识库
+```
+
+---
+
+## 工作流节点
+
+```
+trigger → analysis → architect → detail_design → dispatch → implementation → testing → release
+```
+
+| 节点 | 说明 |
+|------|------|
+| `trigger` | 接收用户输入 |
+| `analysis` | DemandAnalyst 分析需求 (LLM) |
+| `architect` | Architect 设计架构 (LLM) |
+| `detail_design` | DetailDesigner 拆解任务 (LLM) |
+| `dispatch` | 写入任务文件到 work/input/ |
+| `implementation` | 轮询 work/output/ 等待 OpenClaw 结果 |
+| `testing` | 汇总测试结果 |
+| `release` | 交付产物 |
+
+---
+
+## 使用方法
+
+### CLI 方式
+
+```bash
+cd /home/pi/.openclaw/workspace/lang-smart-factory
+python cli.py run "开发一个三国跑酷游戏" --project-id godot-trk-001
+```
+
+### API 方式
+
+```bash
+curl -X POST http://localhost:5666/api/v1/workflow/run \
+  -H "Content-Type: application/json" \
+  -d '{"requirement": "开发一个三国跑酷游戏", "project_id": "godot-trk-001"}'
+```
+
+### 启动 API 服务
+
+```bash
+python api_server.py
+```
+
+---
+
+## 文件队列通信协议
+
+OpenClaw 通过文件系统与 LangFlow Factory 通信：
+
+| 文件类型 | 路径 |
+|----------|------|
+| 输入任务 | `/home/pi/.openclaw/workspace/{project_id}/work/input/{task_id}.json` |
+| 输出结果 | `/home/pi/.openclaw/workspace/{project_id}/work/output/{task_id}.json` |
+
+### TaskCoordinator 工作流程
+1. 创建 `work/input/` 和 `work/output/` 目录
+2. 写入任务 JSON 到 input 目录
+3. 轮询 output 目录等待结果 (每2秒，超时300秒)
+4. 收集结果并返回
+
+---
+
+## LLM 使用策略
+
+| Agent | LLM | 用途 |
+|-------|-----|------|
+| DemandAnalyst | ✅ 是 | 需求分析、需求拆解 |
+| Architect | ✅ 是 | 系统架构设计 |
+| DetailDesigner | ✅ 是 | 任务拆分与详细设计 |
+| TaskCoordinator | ❌ 否 | 纯文件操作，委托 OpenClaw 执行 |
+
+**注意**: 代码实现由 OpenClaw (Claude Code/Codex) 完成，LangFlow Factory 不直接生成代码。
+
+---
+
+## 文档索引
 
 | 文档 | 说明 |
 |------|------|
-| [OPENCLAW_DEPLOY.md](OPENCLAW_DEPLOY.md) | OpenClaw 自助部署：工作区 bootstrap、配置路径、API 可选步骤 |
-| [AGENTS.md](AGENTS.md) | Agent 入口、身份与角色（必读） |
-| [openclaw-knowledge/workflows/OPENCLAW_DEVELOPMENT_FLOW.yaml](openclaw-knowledge/workflows/OPENCLAW_DEVELOPMENT_FLOW.yaml) | 角色与工作流定义（代理按此执行） |
-| [openclaw-knowledge/standards/DEFINITION_OF_DONE.md](openclaw-knowledge/standards/DEFINITION_OF_DONE.md) | 游戏/应用等开发与测试 DoD（对齐 HIGH_REQUIREMENTS） |
-| [openclaw-knowledge/standards/report/README.md](openclaw-knowledge/standards/report/README.md) | 报告模板与规范 |
-| [openclaw-knowledge/README.md](openclaw-knowledge/README.md) | OpenClaw 知识库索引 |
-| [core/README.md](core/README.md) | API / 数据库核心说明 |
-| [docs/README.md](docs/README.md) | 智慧工厂系统文档 |
-| [docs/ORGANIZATION.md](docs/ORGANIZATION.md) | OpenClaw 组织架构 |
-| [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | API 需求规格 |
-| [archived/game/docs/](archived/game/docs/) | 游戏项目文档（归档参考） |
-
-## 🚀 快速开始
-
-```bash
-cd core/api
-python3 server.py
-```
-
-API 将在 http://localhost:5000 启动。
-
-## 📊 组织架构
-
-详见 [docs/ORGANIZATION.md](docs/ORGANIZATION.md)
-
-- **Master Jay (CEO)**, **Winnie (My Lord) (CTO)**
-- **Vanguard001** (树莓派 192.168.3.75): vanguard001, secretary, fuxi, hera
-- **Jarvis** (Mac mini 192.168.3.79): jarvis, athena, cerberus, hermes, apollo, chiron
-- **CodeForge** (Windows 192.168.3.4): codeforge, pangu, nuwa, yu, luban, shennong
-- **Newton** (树莓派 192.168.3.82): newton, einstein, curie, galileo, hawking, darwin
-- **Tesla** (树莓派 192.168.3.83): tesla, model_s, model_3, model_x, model_y, cybertruck
-
----
-
-*智慧工厂 - OpenClaw 知识库与管理系统*
-
----
-
-## 功能特性
-
-### Phase 1: 核心框架
-- GraphState 状态机
-- DemandAnalyst / Architect / DetailDesigner Agent
-- Redis / API / Git / Feishu 工具层
-- CLI 和 REST API
-
-### Phase 2: Worker 架构
-- Worker 基类
-- Dispatcher 任务派发
-- 状态监控 API
-
-### Phase 3: 游戏支持
-- GamePlayEvaluator Agent
-- GodotTools 集成
-- 游戏性评估 (fun_rating 1-5)
-
-### Phase 4: 自动化
-- HumanApproval Agent (人工审批)
-- CICD Orchestrator (构建/发布)
-- 飞书审批卡片
-
-### Phase 5: 监控
-- 完整监控仪表盘
-- 实时状态 API
-- 历史活动时间线
-
-## 项目状态
-
-| Phase | 状态 |
-|-------|------|
-| Phase 1 | ✅ 完成 |
-| Phase 2 | ✅ 完成 |
-| Phase 3 | ✅ 完成 |
-| Phase 4 | ✅ 完成 |
-| Phase 5 | ✅ 完成 |
-
-**总进度: 100%**
-
-## 快速链接
-
-- [需求文档](docs/LANGFLOW_FACTORY_REQUIREMENTS.md)
-- [架构文档](docs/ARCHITECTURE.md)
-- [Agent 设计](docs/AGENTS.md)
-- [部署指南](docs/DEPLOYMENT.md)
+| [docs/LANGFLOW_FACTORY_REQUIREMENTS.md](docs/LANGFLOW_FACTORY_REQUIREMENTS.md) | 需求规格：系统目标、技术栈、Agent定义、工作流状态机、数据Schema |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 架构文档：分层架构、数据流、文件队列通信、部署 |
+| [docs/DETAILED_DESIGN.md](docs/DETAILED_DESIGN.md) | 详细设计：节点实现代码、Agent Prompt模板、API规范 |
