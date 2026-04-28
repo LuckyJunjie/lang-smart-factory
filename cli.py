@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 LangFlow Factory - CLI Entry Point
+Unified command: python cli.py run "<requirement>" --project-id <project_id>
 """
 import argparse
 import json
@@ -8,68 +9,50 @@ import sys
 import os
 
 # Add src to path
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-def run_workflow_command(args):
-    """运行工作流"""
-    from src.workflows.development_workflow import run_workflow
+
+def main():
+    parser = argparse.ArgumentParser(description="LangFlow Factory CLI")
+    parser.add_argument("command", nargs="?", default="run", help="Command (default: run)")
+    parser.add_argument("requirement", nargs="?", help="Requirement text")
+    parser.add_argument("--project-id", "-p", default="default", help="Project ID")
+    parser.add_argument("--output", "-o", help="Output file (JSON)")
+    parser.add_argument("--use-langgraph", action="store_true", default=True, help="Use LangGraph (default: true)")
+    
+    args = parser.parse_args()
+    
+    if args.command != "run":
+        print(f"Unknown command: {args.command}")
+        print("Usage: python cli.py run '<requirement>' --project-id <project_id>")
+        sys.exit(1)
+    
+    if not args.requirement:
+        print("Error: requirement is required")
+        print("Usage: python cli.py run '<requirement>' --project-id <project_id>")
+        sys.exit(1)
+    
+    # Import and run workflow
+    from workflows.development_workflow import run_workflow
     
     print(f"Running workflow for project: {args.project_id}")
     print(f"Requirement: {args.requirement}")
     print("-" * 50)
     
-    result = run_workflow(args.requirement, args.project_id)
+    result = run_workflow(args.requirement, args.project_id, use_langgraph=args.use_langgraph)
     
+    print(f"\n--- Results ---")
     print(f"Current step: {result.get('current_step')}")
     print(f"Structured requirements: {len(result.get('structured_requirements', []))}")
     print(f"Architecture doc: {bool(result.get('architecture_doc'))}")
     print(f"Detailed tasks: {len(result.get('detailed_tasks', []))}")
+    print(f"Test results: {result.get('test_results', {})}")
     
     if args.output:
         with open(args.output, 'w') as f:
             json.dump(result, f, indent=2, ensure_ascii=False, default=str)
-        print(f"\nResult saved to: {args.output}")
+        print(f"Result saved to: {args.output}")
 
-def status_command(args):
-    """查看状态"""
-    print(f"Status for project: {args.project_id}")
-    print("Status: pending - implementation required")
-
-def main():
-    parser = argparse.ArgumentParser(description="LangFlow Factory CLI")
-    subparsers = parser.add_subparsers(dest="command", help="子命令")
-    
-    # run 命令
-    run_parser = subparsers.add_parser("run", help="运行需求分析")
-    run_parser.add_argument("--requirement", "-r", required=True, help="需求文本")
-    run_parser.add_argument("--project-id", "-p", default="default", help="项目ID")
-    run_parser.add_argument("--output", "-o", help="输出文件 (JSON)")
-    
-    # status 命令
-    status_parser = subparsers.add_parser("status", help="查看状态")
-    status_parser.add_argument("--project-id", "-p", required=True, help="项目ID")
-    
-    # list 命令
-    list_parser = subparsers.add_parser("list", help="列出所有节点")
-    
-    args = parser.parse_args()
-    
-    if args.command == "run":
-        run_workflow_command(args)
-    elif args.command == "status":
-        status_command(args)
-    elif args.command == "list":
-        print("Available workflow nodes:")
-        print("  - analysis: Demand Analyst")
-        print("  - architecture: Architect")
-        print("  - detail_design: Detail Designer")
-        print("  - dispatch: Task Dispatch")
-        print("  - implementation: Code Implementation")
-        print("  - testing: Testing & Verification")
-        print("  - acceptance: Final Acceptance")
-        print("  - release: CI/CD & Release")
-    else:
-        parser.print_help()
 
 if __name__ == "__main__":
     main()

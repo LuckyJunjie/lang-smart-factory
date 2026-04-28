@@ -1,171 +1,61 @@
 """
 LangFlow Factory - Demand Analyst Agent
+使用 LLM 分析需求，输出结构化需求列表
 """
 from typing import Dict
 import json
-import os
+from ..llm.minimax_client import llm_client
 
-DEMAND_ANALYST_PROMPT = '''你是资深游戏需求分析师。根据以下需求，拆解为详细的功能需求列表。
+ANALYSIS_PROMPT_TEMPLATE = """分析以下需求，输出结构化JSON需求列表。
 
-游戏名称：temple-run-three-kingdoms（三国跑酷）
-类型：跑酷游戏，跑酷+收集
-平台：Godot 4.x
+需求：{requirement}
 
-需求文本：
-{requirement_text}
+要求：
+- 每个需求包含: id, title, type (feature/performance/ux/security), priority (high/medium/low)
+- description: 详细描述
+- acceptance_criteria: Given-When-Then格式的验收标准数组
+- estimated_complexity: low/medium/high
+- 识别跨需求依赖关系
 
-请输出 JSON 格式的需求列表：
-{{
-  "requirements": [
-    {{
-      "id": "REQ-001",
-      "title": "角色系统",
-      "description": "可选择赵云、关羽、张飞三名角色，每个角色有不同的初始能力和特效",
-      "type": "feature",
-      "priority": "high",
-      "acceptance_criteria": ["可以选择三名角色", "角色有不同属性", "角色有独特技能特效"]
-    }},
-    {{
-      "id": "REQ-002", 
-      "title": "场景生成",
-      "description": "程序化生成古典中国建筑场景，包括宫殿、城墙、寺庙等",
-      "type": "feature", 
-      "priority": "high",
-      "acceptance_criteria": ["场景自动生成", "古典中国风格", "无限跑酷"]
-    }},
-    {{
-      "id": "REQ-003",
-      "title": "障碍物系统",
-      "description": "包括滑铲、跳跃躲避的障碍物",
-      "type": "feature",
-      "priority": "high",
-      "acceptance_criteria": ["障碍物随机出现", "跳跃躲避低矮障碍", "滑铲躲避高障碍"]
-    }},
-    {{
-      "id": "REQ-004",
-      "title": "金币收集",
-      "description": "收集金币用于升级角色能力",
-      "type": "feature",
-      "priority": "medium",
-      "acceptance_criteria": ["金币随机分布", "收集有音效", "金币累计显示"]
-    }},
-    {{
-      "id": "REQ-005",
-      "title": "分数系统",
-      "description": "每100米记录分数，记录最高分",
-      "type": "feature",
-      "priority": "high",
-      "acceptance_criteria": ["实时显示分数", "保存最高分", "分数排行榜"]
-    }},
-    {{
-      "id": "REQ-006",
-      "title": "操作控制",
-      "description": "键盘和触摸操作支持",
-      "type": "feature",
-      "priority": "high",
-      "acceptance_criteria": ["空格跳跃", "下滑铲", "左右移动", "触摸支持"]
-    }}
-  ],
-  "acceptance_criteria": [
-    {{
-      "id": "AC-001",
-      "given": "玩家启动游戏",
-      "when": "点击开始",
-      "then": "角色开始跑酷"
-    }},
-    {{
-      "id": "AC-002",
-      "given": "玩家按空格",
-      "when": "遇到低矮障碍",
-      "then": "角色跳跃躲避"
-    }},
-    {{
-      "id": "AC-003",
-      "given": "玩家向下滑动/按下滑键",
-      "when": "遇到高障碍",
-      "then": "角色滑铲躲避"
-    }},
-    {{
-      "id": "AC-004",
-      "given": "收集金币",
-      "when": "角色触碰金币",
-      "then": "金币消失并增加计数"
-    }},
-    {{
-      "id": "AC-005",
-      "given": "撞到障碍物",
-      "when": "未成功躲避",
-      "then": "游戏结束并显示分数"
-    }}
-  ],
-  "estimated_complexity": "high",
-  "dependencies": ["Godot 4.x", "2D Engine"]
-}}'''
+只输出JSON数组，不要解释。"""
 
 class DemandAnalyst:
-    """需求分析师 Agent"""
-    
     def __init__(self):
         self.name = "DemandAnalyst"
-        self.role = "需求分析与拆解"
-        self.api_key = os.getenv("OPENAI_API_KEY", "")
+        self.role = "需求分析"
     
     def process(self, state: Dict) -> Dict:
-        """分析需求"""
-        requirement_text = state.get("raw_requirement", "")
-        
-        if not requirement_text:
-            state["error"] = "No requirement text provided"
+        requirement = state.get("raw_requirement", "")
+        if not requirement:
+            state["error"] = "No requirement provided"
             return state
         
-        # 使用实际 LLM 或预定义模板
-        if self.api_key:
-            try:
-                from openai import OpenAI
-                client = OpenAI(api_key=self.api_key)
-                prompt = DEMAND_ANALYST_PROMPT.format(requirement_text=requirement_text)
-                response = client.chat.completions.create(
-                    model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.7,
-                )
-                result_text = response.choices[0].message.content
-                # 提取 JSON
-                if "```json" in result_text:
-                    result_text = result_text.split("```json")[1].split("```")[0]
-                result = json.loads(result_text)
-                state["structured_requirements"] = result.get("requirements", [])
-                state["acceptance_criteria"] = result.get("acceptance_criteria", [])
-                state["estimated_complexity"] = result.get("estimated_complexity", "medium")
-            except Exception as e:
-                print(f"[DemandAnalyst] LLM error: {e}, using default")
-                result = self._default_analysis(requirement_text)
-                state.update(result)
-        else:
-            # 使用默认分析
-            result = self._default_analysis(requirement_text)
-            state.update(result)
+        prompt = ANALYSIS_PROMPT_TEMPLATE.format(requirement=requirement)
+        print(f"[DemandAnalyst] Analyzing: {requirement[:50]}...")
         
-        state["current_step"] = "architecture"
+        response = llm_client.generate(prompt, max_tokens=4096)
+        
+        try:
+            if "```json" in response:
+                json_str = response.split("```json")[1].split("```")[0]
+            elif "[" in response:
+                start = response.find("[")
+                end = response.rfind("]") + 1
+                json_str = response[start:end]
+            else:
+                json_str = response
+            
+            requirements = json.loads(json_str)
+            state["structured_requirements"] = requirements
+            
+            high = sum(1 for r in requirements if r.get("priority") == "high")
+            state["estimated_complexity"] = "high" if high >= 5 else "medium" if high >= 3 else "low"
+            state["current_step"] = "architecture"
+            print(f"[DemandAnalyst] Generated {len(requirements)} requirements, complexity: {state['estimated_complexity']}")
+        except json.JSONDecodeError as e:
+            print(f"[DemandAnalyst] JSON parse error: {e}, response: {response[:200]}")
+            state["structured_requirements"] = [{"id": "REQ-001", "title": "核心功能", "type": "feature", "priority": "high", "description": requirement, "acceptance_criteria": ["功能可运行"], "estimated_complexity": "medium"}]
+            state["estimated_complexity"] = "medium"
+            state["current_step"] = "architecture"
+        
         return state
-    
-    def _default_analysis(self, requirement_text: str) -> Dict:
-        """默认需求分析"""
-        return {
-            "structured_requirements": [
-                {"id": "REQ-001", "title": "角色系统", "description": "三名三国武将角色", "type": "feature", "priority": "high"},
-                {"id": "REQ-002", "title": "场景生成", "description": "古典中国建筑跑酷场景", "type": "feature", "priority": "high"},
-                {"id": "REQ-003", "title": "障碍物系统", "description": "跳跃和滑铲躲避障碍", "type": "feature", "priority": "high"},
-                {"id": "REQ-004", "title": "金币收集", "description": "收集金币升级角色", "type": "feature", "priority": "medium"},
-                {"id": "REQ-005", "title": "分数系统", "description": "每100米记录分数", "type": "feature", "priority": "high"},
-                {"id": "REQ-006", "title": "操作控制", "description": "键盘和触摸操作", "type": "feature", "priority": "high"},
-            ],
-            "acceptance_criteria": [
-                {"id": "AC-001", "given": "玩家开始游戏", "when": "点击开始", "then": "角色跑酷"},
-                {"id": "AC-002", "given": "按空格", "when": "遇障碍", "then": "跳跃躲避"},
-                {"id": "AC-003", "given": "滑动/下滑键", "when": "遇高障碍", "then": "滑铲躲避"},
-                {"id": "AC-004", "given": "收集金币", "when": "触碰金币", "then": "金币增加"},
-                {"id": "AC-005", "given": "撞障碍", "when": "未躲避", "then": "游戏结束"},
-            ],
-            "estimated_complexity": "high",
-        }

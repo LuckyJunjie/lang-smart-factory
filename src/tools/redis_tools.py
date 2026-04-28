@@ -14,10 +14,10 @@ class RedisTools:
         self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379")
         self.client = redis.from_url(self.redis_url, decode_responses=True)
         
-        # Stream 键名
-        self.TASKS_STREAM = "smartfactory:stream:tasks"
-        self.RESULTS_STREAM = "smartfactory:stream:results"
-        self.STATE_PREFIX = "smartfactory:state:"
+        # Stream 键名 (langflow prefix)
+        self.TASKS_STREAM = "langflow:tasks"
+        self.RESULTS_STREAM = "langflow:results"
+        self.STATE_PREFIX = "langflow:state:"
     
     def publish_task(self, task: Dict) -> str:
         """发布任务到 Stream"""
