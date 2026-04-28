@@ -49,7 +49,7 @@ def handle_task(task_data):
     task_id = task.get("id", "unknown")
     title = task.get("title", "")
     requirements = task.get("requirements", "")
-    project_id = task_data.get("project_id", "default")
+    project_id = task_data.get("project_id") or task.get("project_id", "default")
     
     print(f"[Newton] Processing: {task_id} - {title}", flush=True)
     
