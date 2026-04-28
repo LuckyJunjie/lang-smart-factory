@@ -1,28 +1,87 @@
-# OpenClaw knowledge base
+# OpenClaw Agent Workspace — LangFlow Factory Integration
 
-Single place for **workflows**, **standards**, **agent workspaces**, **CLI**, **skills**, **MCP**, and **scripts** used by OpenClaw teams.
+**For OpenClaw agents in the 福渊研发部 team**
 
-**Quick picker (CLI vs skills vs MCP vs scripts):** [TOOLS_INDEX.md](TOOLS_INDEX.md)
+This directory contains the knowledge base and skills for OpenClaw agents to participate in the LangFlow Factory software development pipeline.
 
-| Path | Contents |
-|------|----------|
-| `workflows/` | `OPENCLAW_DEVELOPMENT_FLOW.yaml`, communication system, workspace layout, 24h test design |
-| `standards/` | DoD, development flow, projects, report templates |
-| `organization/` | Team structure and per-agent workspace definitions (`USER.md`, `TOOLS.md`, …) |
-| `cli/` | Smart Factory CLI (`python3 -m cli`) |
-| `skills/` | High-level Python skills (`python3 -m skills.*`) |
-| `mcp/` | MCP server implementations (optional; CLI preferred) |
-| `scripts/` | Workspace bootstrap, seeds, utilities |
-| `subsystems/` | Legacy subsystem tools and wrappers |
+---
 
-Product API and database: [../core/README.md](../core/README.md).  
-**Redis 协作（多机优先）:** [../docs/REDIS_COLLABORATION.md](../docs/REDIS_COLLABORATION.md).  
-High-level requirements: [../docs/HIGH_REQUIREMENTS.md](../docs/HIGH_REQUIREMENTS.md).
+## Quick Start for New Agents
 
-**运维与技能补充（本知识库）**
+1. **Read this file** — understand the system
+2. **Read `AGENTS.md`** — your responsibilities as an OpenClaw executor
+3. **Read `skills/langflow-executor/SKILL.md`** — how to execute tasks
+4. **Set up cron job** — monitor work/input/ every 5 minutes
+5. **Start processing tasks** — check work/input/ for pending work
 
-| 主题 | 文档 |
-|------|------|
-| **GitHub 网络 / `git push` 失败**、**5 分钟 cron 重试至成功后自卸** | [docs/GITHUB_NETWORK_AND_PUSH_RETRY.md](docs/GITHUB_NETWORK_AND_PUSH_RETRY.md)（脚本：`scripts/git_push_retry_until_ok.sh`） |
-| **Godot：`godogen` / `godot-task`、游戏测试入口** | [docs/GODOT_SKILLS_AND_TESTING.md](docs/GODOT_SKILLS_AND_TESTING.md) |
-| **环境与工具安装基线**（Git、Godot 4.5.1、pytest、FFmpeg 等） | [docs/TOOLCHAIN.md](docs/TOOLCHAIN.md)；工具总表另见根目录 [../docs/TOOLCHAIN.md](../docs/TOOLCHAIN.md) |
+---
+
+## System Overview
+
+LangFlow Factory (Newton) is the **orchestrator** — it analyzes requirements, designs architecture, and breaks down tasks. OpenClaw agents are the **executors** — they implement the code.
+
+```
+Newton (LangFlow Factory)          OpenClaw Agents (You)
+         │                                  │
+    DemandAnalyst                          │
+         │                                  │
+    Architect                              │
+         │                                  │
+    DetailDesigner                         │
+         │                                  │
+    dispatch ─── write ──→ work/input/     │
+         │                                  │ ← Read task
+         │                                  │ ← Execute with coding-agent
+         │                                  │
+         │ ◄── poll ── work/output/        │
+         │                                  │
+    (ReAct verification loop)              │
+         │                                  │
+         │ ◄── feedback ── work/feedback/   │
+         │                                  │
+```
+
+---
+
+## Directory Structure
+
+```
+openclaw-knowledge/
+├── README.md                    # This file
+├── AGENTS.md                     # OpenClaw agent responsibilities
+├── skills/
+│   └── langflow-executor/        # Task execution skill
+│       └── SKILL.md              # Execution protocol
+└── workflows/
+    └── LANGFLOW_WORKFLOW.md      # Workflow interaction details
+```
+
+---
+
+## Your Tasks
+
+| Task | Description |
+|------|-------------|
+| Monitor | Check `work/input/` every 5 minutes |
+| Execute | Run coding-agent for each task |
+| Verify | Self-check against acceptance_criteria |
+| Output | Write results to `work/output/` |
+| Retry | Handle feedback in `work/feedback/` |
+
+---
+
+## Getting Help
+
+- **Task questions** → Ask Newton in Feishu
+- **Urgent issues** → Message in 福渊研发部 group
+- **Skill updates** → Check this knowledge base
+
+---
+
+## Key Principles
+
+1. **File-based communication** — no Redis, no direct API calls to Newton
+2. **Acceptance criteria first** — always verify against the criteria before reporting completion
+3. **Self-verification** — check your output before writing to work/output/
+4. **Retry with feedback** — incorporate previous errors when re-executing
+5. **Log everything** — help Newton debug by including errors in output JSON
