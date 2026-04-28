@@ -417,25 +417,20 @@ def run_workflow(requirement_text: str, project_id: str = "default", use_langgra
             result = graph.invoke(state_dict)
             return result
     
-    # 回退到简单模式
+    # Simple sequential mode - advance through all nodes
     print("[Workflow] Using simple sequential workflow")
     nodes = create_workflow_nodes()
-    current = "analysis"
-    max_iterations = 20
-    iterations = 0
+    node_sequence = ["analysis", "architecture", "detail_design", "dispatch", "implementation", "testing", "acceptance", "release"]
     
-    while current in nodes and iterations < max_iterations:
+    for current in node_sequence:
+        if current not in nodes:
+            continue
+        
         state_dict = nodes[current](state_dict)
-        iterations += 1
-        print(f"[Workflow] Executed {current}, next: {state_dict.get('current_step')}")
+        print(f"[Workflow] Executed {current}, step: {state_dict.get('current_step')}")
         
         if state_dict.get("current_step") == "completed":
             break
-        
-        next_node = get_next_node(state_dict.get("current_step", ""))
-        if not next_node:
-            break
-        current = next_node
     
     return state_dict
 
